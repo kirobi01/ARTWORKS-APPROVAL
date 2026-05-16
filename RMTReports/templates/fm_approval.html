@@ -1,0 +1,499 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapa Oil Refineries: FM Approval</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+    
+        /* Header styles */
+        .header {
+            background-color: #CC1C24;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #0B5394;
+        }
+    
+        /* Container styles */
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #fff;
+        }
+        .two-column {
+            display: flex;           /* Use flexbox to arrange items in a row */
+            justify-content: space-between; /* Optional: space between columns */
+        }
+        
+        .column {
+            flex: 1;                /* Allow each column to take up equal space */
+            margin-right: 20px;    /* Optional: space between columns */
+        }
+        
+        .column:last-child {
+            margin-right: 0;       /* Remove margin from the last column */
+        }
+        
+
+        .report-details, .approval-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .report-details table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .report-details th, .report-details td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .report-details th {
+            background-color: #f4f4f4;
+        }
+
+        .approval-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .approval-section div {
+            margin-bottom: 20px;
+        }
+
+        .approval-section label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .approval-section select, .approval-section textarea {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box; /* Ensure padding is included in width */
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .button-container .approved {
+            background-color: #28a745;
+        }
+
+        .button-container .rejected {
+            background-color: #dc3545;
+        }
+
+        .button-container .approved:hover {
+            background-color: #218838;
+        }
+
+        .button-container .rejected:hover {
+            background-color: #c82333;
+        }
+
+        .submitted {
+            background-color: #218838;
+            color: #fff;
+            cursor: not-allowed;
+        }
+
+        .submitted:hover {
+            background-color: #1e7e34;
+        }
+        
+        /* Mobile responsiveness for form layout */
+        @media (max-width: 768px) {
+            .two-column div {
+                flex: 1 1 100%;
+            }
+    
+            .form-container {
+                padding: 20px;
+            }
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+        }
+        
+        .form-control:focus {
+            border-color: #3A6D8C;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(58, 109, 140, 0.2);
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h3><a href="{% url 'dashboard' %}">Raw Materials Test Report - Factory Manager Approval</a></h3>
+        </div>
+    
+        <div class="report-details">
+            <h4>RMTR Report Details</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tbody>
+                    <tr>
+                        <th style="width: 30%; padding: 4px;">RMTR NO:</th>
+                        <td style="padding: 4px;">{{ report.rmtr_no }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Date:</th>
+                        <td style="padding: 4px;">{{ report.date }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Supplier:</th>
+                        <td style="padding: 4px;">{{ report.supplier }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Type:</th>
+                        <td style="padding: 4px;">{{ report.material_type }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Sub Category:</th>
+                        <td style="padding: 4px;">{{ report.sub_category }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Management Comments:</th>
+                        <td style="padding: 4px;">{{ report.management_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Purchase HOD Comments:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_comments}}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Tests:</th>
+                        <td style="padding: 4px;">{{ report.tests }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Plant:</th>
+                        <td style="padding: 4px;">{{ report.plant }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Management Approver(s):</th>
+                        <td style="padding: 4px;">{{ report.title_case_approved_mgt }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Requested By:</th>
+                        <td style="padding: 4px;">{{ report.requested_by }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Sensitivity:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_sensitivity }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Second Management Comments:</th>
+                        <td style="padding: 4px;">{{ report.management_comments_2 }}</td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <th style="padding: 4px;">First Management Comments:</th>
+                        <td style="padding: 4px;">{{ report.management_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">HOD Purchase Comments:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_comments }}</td>
+                    </tr>
+                    <tr>
+
+                        <th style="padding: 4px;">Priority:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_priority }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Specs:</th>
+                        <td style="padding: 4px;">{{ report.specs }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Justification:</th>
+                        <td style="padding: 4px;">{{ report.justification }}</td>
+                        <tr>
+                            <th style="padding: 4px;">Image:</th>
+                            <td style="padding: 4px;">
+                                <img src="{{ report.image.url }}" 
+                                     style="width: 50px; height: 50px; cursor: pointer; object-fit: cover;" 
+                                     onclick="toggleZoom(this)">
+                            </td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="approval-section">
+            <h4>Factory Manager Approval</h4>
+            <form id="approvalForm" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="rmtr_no" value="{{ report.rmtr_no }}">
+                
+                
+                <!--
+                <div class="form-group">
+                    <label for="hod_plant">Select HOD and Plant</label>
+                    <select id="hod_plant" name="hod_plant" required class="form-control" onchange="handleHodPlantChange(this)">
+                        <option value="">-- Select HOD and Plant --</option>
+                        <option value="baking" data-email="support.user5@kapa-oil.com">Mary Melvin - Baking</option>
+                        <option value="refinery" data-email="francis@example.com">Francis - Refinery</option>
+                        <option value="tissue" data-email="stephen@example.com">Stephen - Tissue</option>
+                        <option value="soap" data-email="rushabh@example.com">Rushabh - Soap</option>
+                        <option value="detergent" data-email="sahil@example.com">Sahil - Detergent</option>
+                        <option value="matchbox" data-email="mary.kibui@example.com">Mary Kibui - Matchbox</option>
+                    </select>
+                </div>
+            -->
+                <div>
+                    <label for="comments">Comments:</label>
+                    <textarea id="comments" name="comments" rows="4" required>{{ report.fm_comments }}</textarea>
+                </div>
+    
+                <div class="button-container">
+                    <button type="button" onclick="submitApproval('approved')" class="approved" 
+                        {% if report.fm_approved %}disabled{% endif %}>
+                        Approve
+                    </button>
+                    <button type="button" onclick="submitApproval('rejected')" class="rejected"
+                        {% if report.fm_rejected %}disabled{% endif %}>
+                        Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--
+                    <div class="column">
+                        <label for="sensitivity">Sensitivity of Ingredient</label>
+                        <select id="sensitivity" name="sensitivity" required>
+                            <option value="low" {% if report.hod_purchase_sensitivity == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if report.hod_purchase_sensitivity == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if report.hod_purchase_sensitivity == 'high' %}selected{% endif %}>High</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <div>
+                    <label for="comments">Comments:</label>
+                    <textarea id="comments" name="comments" rows="4" required>{{ report.fm_comments }}</textarea>
+                </div>
+    
+                <div class="button-container">
+                    <button type="button" onclick="submitApproval('approved')" class="approved" 
+                        {% if report.fm_approved %}disabled{% endif %}>
+                        Approve
+                    </button>
+                    <button type="button" onclick="submitApproval('rejected')" class="rejected"
+                        {% if report.fm_rejected %}disabled{% endif %}>
+                        Reject
+                    </button>
+                </div>
+            </form>
+        </div> -->
+    </div>
+    
+    <script>
+
+       
+    
+        /* 
+        function handleHodPlantChange(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const email = selectedOption.dataset.email;
+            const hodName = selectedOption.text;
+            const rmtrNo = document.querySelector('input[name="rmtr_no"]').value;
+        
+            if (selectElement.value) {
+                // Prepare email data
+                const emailData = {
+                    to_email: email,
+                    subject: `RMTR ${rmtrNo} - Review Required`,
+                    message: `Dear ${hodName},\n\nA new RMTR (${rmtrNo}) requires your review.\n\nPlease review at your earliest convenience.`,
+                    rmtr_no: rmtrNo
+                };
+        
+                // Send email notification
+                sendEmailNotification(emailData);
+            }
+       
+        function sendEmailNotification(emailData) {
+            fetch('/api/send-email/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(emailData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Email notification sent successfully');
+                } else {
+                    console.error('Failed to send email notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending email notification:', error);
+            });
+        }
+        */
+        function submitApproval(status) {
+            const form = document.getElementById('approvalForm');
+            const comments = document.getElementById('comments').value.trim();
+            
+            if (!comments) {
+                alert('Please provide comments before submitting');
+                return;
+            }
+    
+            // Disable buttons and show loading state
+            const buttons = form.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            });
+    
+            const formData = new FormData(form);
+            formData.append('approval_status', status);
+    
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(status === 'approved' ? 'Request approved successfully!' : 'Request rejected successfully!');
+                    // Short delay to show the message
+                    setTimeout(() => {
+                        window.location.href = '/pending/';
+                    }, 500);
+                } else {
+                    throw new Error(data.message || 'Error updating approval status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error submitting approval. Please try again.');
+                // Re-enable buttons on error
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                });
+            });
+        }
+    
+        // Optional: Add confirmation before submitting
+        document.querySelectorAll('.approved, .rejected').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const action = this.classList.contains('approved') ? 'approve' : 'reject';
+                if (!confirm(`Are you sure you want to ${action} this request?`)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

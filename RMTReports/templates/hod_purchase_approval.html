@@ -1,0 +1,540 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report Review</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+    
+        /* Header styles */
+        .header {
+            background-color: #CC1C24;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #0B5394;
+        }
+    
+        /* Container styles */
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #fff;
+        }
+        .two-column {
+            display: flex;           /* Use flexbox to arrange items in a row */
+            justify-content: space-between; /* Optional: space between columns */
+        }
+        
+        .column {
+            flex: 1;                /* Allow each column to take up equal space */
+            margin-right: 20px;    /* Optional: space between columns */
+        }
+        
+        .column:last-child {
+            margin-right: 0;       /* Remove margin from the last column */
+        }
+        
+
+        .report-details, .approval-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .report-details table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .report-details th, .report-details td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .report-details th {
+            background-color: #f4f4f4;
+        }
+
+        .approval-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .approval-section div {
+            margin-bottom: 20px;
+        }
+
+        .approval-section label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .approval-section select, .approval-section textarea {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box; /* Ensure padding is included in width */
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .button-container .approved {
+            background-color: #28a745;
+        }
+
+        .button-container .rejected {
+            background-color: #dc3545;
+        }
+
+        .button-container .approved:hover {
+            background-color: #218838;
+        }
+
+        .button-container .rejected:hover {
+            background-color: #c82333;
+        }
+        .button-container .edit_rmtr_test{
+            background-color: #007bff;
+        }
+        .submitted {
+            background-color: #218838;
+            color: #fff;
+            cursor: not-allowed;
+        }
+
+        .submitted:hover {
+            background-color: #1e7e34;
+        }
+        
+        /* Mobile responsiveness for form layout */
+        @media (max-width: 768px) {
+            .two-column div {
+                flex: 1 1 100%;
+            }
+    
+            .form-container {
+                padding: 20px;
+            }
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h3><a href="{% url 'dashboard' %}"> Raw Materials Test Report - HOD Purchase Approval </a></h3>
+        </div>
+    
+        <div class="report-details">
+            <h4>RMTR Report Details</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tbody>
+                    <tr>
+                        <th style="width: 30%; padding: 4px;">RMTR NO:</th>
+                        <td style="padding: 4px;">{{ report.rmtr_no }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Date:</th>
+                        <td style="padding: 4px;">{{ report.date }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Name:</th>
+                        <td style="padding: 4px;">{{ report.material_name }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Supplier:</th>
+                        <td style="padding: 4px;">{{ report.supplier }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Type:</th>
+                        <td style="padding: 4px;">{{ report.material_type }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Sub Category:</th>
+                        <td style="padding: 4px;">{{ report.sub_category }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">UOM:</th>
+                        <td style="padding: 4px;">{{ report.uom }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Quantity:</th>
+                        <td style="padding: 4px;">{{ report.quantity }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Tests:</th>
+                        <td style="padding: 4px;">{{ report.tests }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Plant:</th>
+                        <td style="padding: 4px;">{{ report.plant }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Management Approver(s):</th>
+                        <td style="padding: 4px;">{{ report.title_case_approved_mgt }}</td>
+
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Requested By:</th>
+                        <td style="padding: 4px;">{{ report.requested_by }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Specs:</th>
+                        <td style="padding: 4px;">{{ report.specs }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Justification:</th>
+                        <td style="padding: 4px;">{{ report.justification }}</td>
+                    </tr>
+
+                   
+                    <tr>
+                        <th style="padding: 4px;">Image:</th>
+                        <td style="padding: 4px;">
+                            <img src="{{ report.image.url }}" 
+                                 style="width: 50px; height: 50px; cursor: pointer; object-fit: cover; border-radius: 4px;" 
+                                 onclick="toggleZoom(this)">
+                        </td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+
+        <div class="approval-section">
+            <h4>HOD Purchase Approval</h4>
+            <form id="approvalForm" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="rmtr_no" value="{{ report.rmtr_no }}">
+                
+                <div class="two-column">
+                    <div class="column">
+                        <label for="priority">Priority</label>
+                        <select id="priority" name="priority" required>
+                            <option value="1" {% if report.hod_purchase_priority == '1' %}selected{% endif %}>1 - Low</option>
+                            <option value="2" {% if report.hod_purchase_priority == '2' %}selected{% endif %}>2 - Medium</option>
+                            <option value="3" {% if report.hod_purchase_priority == '3' %}selected{% endif %}>3 - High</option>
+                        </select>
+                    </div>
+    
+                    <div class="column">
+                        <label for="sensitivity">Sensitivity</label>
+                        <select id="sensitivity" name="sensitivity" required>
+                            <option value="low" {% if report.hod_purchase_sensitivity == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if report.hod_purchase_sensitivity == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if report.hod_purchase_sensitivity == 'high' %}selected{% endif %}>High</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <div>
+                    <label for="comments">Comments:</label>
+                    <textarea id="comments" name="comments" rows="4" required>{{ report.hod_purchase_comments }}</textarea>
+                </div>
+    
+                <div class="button-container">
+                    <button type="button" onclick="submitApproval('approved')" class="approved" 
+                        {% if report.hod_purchase_approved %}disabled{% endif %}>
+                        Approve
+                    </button>
+                    <button type="button" onclick="handleEditRequest('{{ report.rmtr_no }}')" class="edit_rmtr_test" 
+                        {% if report.hod_purchase_approved %}disabled{% endif %}>
+                        Edit RMTR
+                    </button>
+                    <button type="button" onclick="submitApproval('rejected')" class="rejected"
+                        {% if report.hod_purchase_rejected %}disabled{% endif %}>
+                        Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+    
+            function toggleZoom(img) {
+                if (!img.classList.contains('zoomed')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'overlay';
+                    overlay.onclick = () => {
+                        img.classList.remove('zoomed');
+                        overlay.remove();
+                    };
+                    document.body.appendChild(overlay);
+                    img.classList.add('zoomed');
+                }
+            }
+          
+            function openTestRequestEdit(rmtrNo) {
+                // Save current page URL to session storage for returning
+                sessionStorage.setItem('returnUrl', window.location.href);
+                
+                // Store that we're in edit mode
+                sessionStorage.setItem('editMode', 'true');
+                
+                // Redirect to test request form with edit parameter
+                window.location.href = `/test_request/${rmtrNo}/?mode=edit`;
+            }
+            
+            //submit Approval Function
+function submitApproval(status) {
+    const form = document.getElementById('approvalForm');
+    const comments = document.getElementById('comments').value.trim();
+    
+    if (!comments) {
+        alert('Please provide comments before submitting');
+        return;
+    }
+    
+    // Confirmation dialog
+    const action = status === 'approved' ? 'approve' : 'reject';
+    if (!confirm(`Are you sure you want to ${action} this request?`)) {
+        return;
+    }
+    
+    // Disable buttons and show loading state
+    toggleButtonsState(true);
+    
+    const formData = new FormData(form);
+    formData.append('approval_status', status);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(status === 'approved' ? 'Request approved successfully!' : 'Request rejected successfully!');
+            // Short delay to show the message
+            setTimeout(() => {
+                window.location.href = '/pending/';
+            }, 500);
+        } else {
+            throw new Error(data.message || 'Error updating approval status');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting approval. Please try again.');
+        // Re-enable buttons on error
+        toggleButtonsState(false);
+    });
+}
+
+// New function to handle edit request
+function handleEditRequest(rmtrNo) {
+    if (!rmtrNo) {
+        alert('Error: RMTR number not found');
+        return;
+    }
+
+    // Show loading state
+    toggleButtonsState(true);
+
+    // Add loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'loading-overlay';
+    loadingIndicator.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading edit page...</div>
+    `;
+    document.body.appendChild(loadingIndicator);
+
+    // Redirect to edit page
+    window.location.href = `/edit_rmtr/${rmtrNo}/`;
+}
+
+// Helper function to toggle buttons state
+function toggleButtonsState(disabled) {
+    const buttons = document.querySelectorAll('.button-container button');
+    buttons.forEach(btn => {
+        btn.disabled = disabled;
+        btn.style.opacity = disabled ? '0.7' : '1';
+    });
+}
+
+// Add these styles to your existing CSS
+const styles = `
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3A6D8C;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+        margin-top: 15px;
+        font-size: 16px;
+        color: #333;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .button-container {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0;
+    }
+
+    .button-container button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .button-container button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .button-container .approved {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .button-container .edit_rmtr_test {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .button-container .rejected {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .button-container button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+`;
+
+// Add styles to document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = styles;
+document.head.appendChild(styleSheet);
+            
+            // Initialize when document is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add loading indicator to the page
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'loadingIndicator';
+                loadingDiv.className = 'loading-indicator';
+                loadingDiv.style.display = 'none';
+                document.body.appendChild(loadingDiv);
+            });
+            
+    </script>
+</body>
+</html>

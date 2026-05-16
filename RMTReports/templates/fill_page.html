@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapa Oil Refineries Test Report</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+    
+        /* Header styles */
+        .header {
+            background-color: #CC1C24;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* Small blue divider line under the header */
+        .header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -4px;
+            height: 4px;
+            background-color: #0B5394;
+            border-radius: 0 0 4px 4px;
+        }
+        .header a {
+            color: inherit;  
+            text-decoration: none;  
+        }
+        
+        .header a:hover {
+            text-decoration: none;  
+        }
+    
+        /* Container styles */
+        .container {
+            max-width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-size: 20px;
+            color: #fff;
+        }
+
+      
+        .header h1 {
+            font-size: 25px;
+            margin: 0;
+        }
+
+        /* Details Row Layout */
+        .details-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .details-row {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .details-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            width: 150px;
+            min-width: 150px;
+            padding-right: 10px;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            color: #333;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        /* Test Table Styles */
+        .tables-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .test-table th,
+        .test-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .test-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .test-table input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            resize: vertical;
+            min-height: 80px;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            background-color: #218838;
+        }
+
+        .image-section {
+            margin-top: 15px;
+        }
+
+        .image-preview {
+            margin-top: 10px;
+            max-width: 150px;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .details-row {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 8px 0;
+            }
+
+            .detail-label {
+                width: 100%;
+                margin-bottom: 4px;
+            }
+        }
+        .add-row-button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px 0;
+            display: block;
+            width: 200px;
+        }
+
+        .add-row-button:hover {
+            background-color: #218838;
+        }
+        
+        /* Style for remove row button */
+        .remove-row-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .remove-row-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="{% url 'dashboard' %}">Kapa Oil Refineries Ltd</a></h1>
+            <h3><a href="{% url 'dashboard' %}">Raw Material Test Report</a></h3>
+        </div>
+
+        <form id="test-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- RMTR Details in Rows -->
+            <div class="details-container">
+                <div class="details-row">
+                    <span class="detail-label">RMTR No:</span>
+                    <span class="detail-value">{{ form_data.rmtr_no }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">{{ form_data.date_created}}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Supplier:</span>
+                    <span class="detail-value">{{ form_data.supplier }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Material Type:</span>
+                    <span class="detail-value">{{ form_data.material_type }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Material:</span>
+                    <span class="detail-value">{{ form_data.sub_category }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Plant:</span>
+                    <span class="detail-value">{{ form_data.plant }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Tests Required:</span>
+                    <span class="detail-value">{{ form_data.tests }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">Management Comments:</span>
+                    <span class="detail-value">{{ form_data.management_comments }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">HOD Purchase Comments:</span>
+                    <span class="detail-value">{{ form_data.hod_purchase_comments }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="detail-label">HOD Comments:</span>
+                    <span class="detail-value">{{ form_data.hod_comments }}</span>
+                </div>
+
+            </div>
+
+            <!-- Test Results Tables -->
+            <div class="tables-container">
+                <div id="tablesContainer"></div>
+                <button type="button" class="add-row-button" onclick="addNewTestRow()">Add Additional Test</button>
+            </div>
+
+            <!-- Conclusion Section -->
+            <div class="tables-container">
+                <label for="conclusion"><strong>Final Conclusion:</strong></label>
+                <textarea id="conclusion" name="lab_qc_comments" required>{{ form_data.lab_qc_comments }}</textarea>
+                
+                <div style="margin-top: 10px;">
+                    <label for="tests-done-by">Tests Carried out By:</label>
+                    <input type="text" id="tests-done-by" name="tests_done_by" 
+                           value="{{ form_data.tests_done_by }}" required 
+                           style="width: 100%; padding: 6px; margin-top: 5px;">
+                </div>
+
+                <div class="image-section">
+                    <label for="image-upload">Upload Test Image:</label>
+                    <input type="file" id="image-upload" name="test_image" 
+                           accept="image/*" onchange="previewImage(event)"
+                           style="margin-top: 5px;">
+                    <div id="image-preview" class="image-preview" style="display: none;">
+                        <img id="uploaded-image" alt="Preview">
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="button" onclick="submitForm()">Submit Test Results</button>
+        </form>
+    </div>
+
+
+
+
+
+
+
+
+
+      
+<script>
+// Global state for form management
+const formState = {
+    totalTables: 0,
+    hasChanges: false,
+    isSubmitting: false,
+    rmtrNo: "",
+    customRowCount: 0
+}
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+    setupEventListeners();
+});
+
+function initializeForm() {
+    try {
+        // Get RMTR number from the display field
+        formState.rmtrNo = document.querySelector('.detail-value').textContent.trim();
+        
+        // Get tests from the tests field and create tables
+        const testsElement = Array.from(document.querySelectorAll('.detail-value')).find(
+            el => el.previousElementSibling.textContent.includes('Tests Required')
+        );
+        
+        if (testsElement) {
+            const tests = testsElement.textContent.trim().split(',').map(test => test.trim()).filter(Boolean);
+            createTestTables(tests);
+        }
+
+        // Initialize image preview if exists
+        initializeImagePreview();
+        
+        console.log('Form initialized successfully');
+    } catch (error) {
+        console.error('Error initializing form:', error);
+        alert('Error initializing form. Please refresh the page.');
+    }
+}
+
+function createTestTables(tests) {
+    const container = document.getElementById('tablesContainer');
+    container.innerHTML = ''; // Clear existing tables
+    
+    tests.forEach((test, index) => {
+        if (index < 16) { // Maximum 16 tests
+            createSingleTestTable(test, index + 1);
+            formState.totalTables++;
+        }
+    });
+}
+
+function createSingleTestTable(test, index, isCustomRow = false) {
+    const table = document.createElement('table');
+    table.className = 'test-table';
+    table.id = `test-table-${index}`;
+    
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Tests Carried Out</th>
+                <th>Sample Results</th>
+                <th>Current Raw Material Results</th>
+                <th>Kapa Standards</th>
+                ${isCustomRow ? '<th>Actions</th>' : ''}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <input type="text" 
+                           name="tests_carried_out${index}" 
+                           value="${test || ''}"
+                           ${isCustomRow ? '' : 'readonly'} 
+                           class="form-input test-name">
+                </td>
+                <td>
+                    <input type="text" 
+                           name="sample_results${index}" 
+                           class="form-input" 
+                           required
+                           placeholder="">
+                </td>
+                <td>
+                    <input type="text" 
+                           name="raw_material_results${index}" 
+                           class="form-input" 
+                           required
+                           placeholder="">
+                </td>
+                <td>
+                    <input type="text" 
+                           name="kapa_standards${index}" 
+                           class="form-input" 
+                           required
+                           placeholder="">
+                </td>
+                ${isCustomRow ? `
+                <td>
+                    <button type="button" class="remove-row-btn" onclick="removeTestRow(${index})">Remove</button>
+                </td>` : ''}
+            </tr>
+        </tbody>
+    `;
+    
+    document.getElementById('tablesContainer').appendChild(table);
+    addTableInputListeners(table, index);
+}
+
+function addNewTestRow() {
+    // Check if we've reached the maximum number of tests (16)
+    if (formState.totalTables >= 16) {
+        alert('Maximum number of tests (16) reached');
+        return;
+    }
+    
+    formState.totalTables++;
+    formState.customRowCount++;
+    createSingleTestTable('', formState.totalTables, true);
+    formState.hasChanges = true;
+}
+
+function removeTestRow(index) {
+    const table = document.getElementById(`test-table-${index}`);
+    if (table) {
+        table.remove();
+        formState.totalTables--;
+        formState.customRowCount--;
+        formState.hasChanges = true;
+    }
+}
+
+
+function addTableInputListeners(table, index) {
+    const inputs = table.querySelectorAll('input:not([readonly])');
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            formState.hasChanges = true;
+            validateTableInput(input, index);
+        });
+    });
+}
+
+function validateTableInput(input, tableIndex) {
+    const table = document.getElementById(`test-table-${tableIndex}`);
+    const allInputs = table.querySelectorAll('input:not([readonly])');
+    const allFilled = Array.from(allInputs).every(input => input.value.trim() !== '');
+    
+    table.classList.toggle('incomplete', !allFilled);
+    return allFilled;
+}
+
+function setupEventListeners() {
+    // Form change detection
+    document.getElementById('test-form').addEventListener('input', (event) => {
+        if (event.target.type !== 'file') {
+            formState.hasChanges = true;
+        }
+    });
+
+    // Prevent accidental navigation
+    window.addEventListener('beforeunload', (e) => {
+        if (formState.hasChanges && !formState.isSubmitting) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Prevent default form submission
+    document.getElementById('test-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        return false;
+    });
+}
+
+function initializeImagePreview() {
+    const imagePreview = document.getElementById('image-preview');
+    const uploadedImage = document.getElementById('uploaded-image');
+    
+    if (uploadedImage.src) {
+        imagePreview.style.display = 'block';
+    }
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Image file is too large. Maximum size is 5MB.');
+        event.target.value = '';
+        return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Please upload a valid image file (JPEG, PNG, or GIF).');
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('image-preview').style.display = 'block';
+        document.getElementById('uploaded-image').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    formState.hasChanges = true;
+}
+
+function validateForm() {
+    const errors = [];
+
+    // Validate conclusion
+    const conclusion = document.getElementById('conclusion').value.trim();
+    if (!conclusion) {
+        errors.push('Please enter a conclusion');
+    }
+
+    // Validate tests done by
+    const testsDoneBy = document.getElementById('tests-done-by').value.trim();
+    if (!testsDoneBy) {
+        errors.push('Please enter who performed the tests');
+    }
+
+    // Validate all tables
+    let testCount = 0;
+    document.querySelectorAll('.test-table').forEach((table, index) => {
+        const inputs = table.querySelectorAll('input');
+        const testName = inputs[0].value.trim();
+
+        if (testName) {
+            const sampleResults = inputs[1].value.trim();
+            const rawMaterialResults = inputs[2].value.trim();
+            const kapaStandards = inputs[3].value.trim();
+
+            if (!sampleResults || !rawMaterialResults || !kapaStandards) {
+                errors.push(`Please complete all fields for test "${testName}"`);
+            }
+            testCount++;
+        } else if (!table.querySelector('.remove-row-btn')) {
+            // Only validate test name for non-custom rows
+            errors.push('Test name is required');
+        }
+    });
+    
+    if (testCount === 0) {
+        errors.push('At least one test result is required');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors,
+        testCount: testCount
+    };
+}
+
+function submitForm() {
+    try {
+        if (formState.isSubmitting) {
+            return;
+        }
+
+        // Validate form
+        const validation = validateForm();
+        if (!validation.isValid) {
+            alert(validation.errors.join('\n'));
+            return;
+        }
+
+        // Update submission state
+        formState.isSubmitting = true;
+        const submitButton = document.querySelector('button[type="button"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = 'Submitting...';
+
+        // Prepare form data
+        const form = document.getElementById('test-form');
+        const formData = new FormData(form);
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        // Rename image file if present
+        const imageFile = document.getElementById('image-upload').files[0];
+        if (imageFile) {
+            const extension = imageFile.name.split('.').pop();
+            formData.set('test_image', imageFile, `${formState.rmtrNo}_test_image.${extension}`);
+        }
+
+        // Submit the form
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                formState.hasChanges = false;
+                alert('Test results saved successfully');
+                window.location.href = '/pending/';
+            } else {
+                throw new Error(data.message || 'Error saving test results');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'Error submitting form');
+        })
+        .finally(() => {
+            formState.isSubmitting = false;
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Submit Test Results';
+        });
+
+    } catch (error) {
+        console.error('Error in submitForm:', error);
+        alert('An error occurred while submitting the form. Please try again.');
+        formState.isSubmitting = false;
+        const submitButton = document.querySelector('button[type="button"]');
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Submit Test Results';
+    }
+}
+</script>
+</html>

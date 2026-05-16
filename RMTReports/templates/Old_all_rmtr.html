@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMTR Dashboard</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            line-height: 1.6;
+        }
+        
+        /* Header Styles */
+        .header {
+            background-color: #3A6D8C;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.75rem;
+            margin: 0;
+        }
+        
+        /* Hamburger Menu */
+        .hamburger {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 5px;
+        }
+        
+        .hamburger div {
+            width: 30px;
+            height: 3px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        
+        /* Side Navigation */
+        .side-nav {
+            height: 100vh;
+            width: 0;
+            position: fixed;
+            top: 0;
+            right: 0;  
+            background-color: #72A0c1;
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
+            z-index: 1001;
+        }
+        
+        
+        .side-nav a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            color: white;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        
+        .side-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .side-nav .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+            color: white;
+        }
+
+        /* Controls Container */
+        .controls-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Search Bar */
+        .search-container {
+            flex: 1;
+            max-width: 300px;
+        }
+        
+        .search-container input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-container input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+        }
+        
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+            min-width: 150px;
+            text-align: left;
+        }
+        
+        .dropdown-button:hover {
+            background-color: #0056b3;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            min-width: 250px;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1002;
+            margin-top: 5px;
+            padding: 10px;
+        }
+        
+        .dropdown-content.show {
+            display: block;
+        }
+        
+        /* Checkbox Styles */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 380px;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+            user-select: none;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .checkbox-group label:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #007bff;
+        }
+        
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        thead th {
+            background-color: #475E74;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        thead th:hover {
+            background-color: #3A6D8C;
+        }
+        
+        tbody td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tbody tr:hover {
+            background-color: #d1ffd1;
+            cursor: pointer;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .pagination button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 40px;
+            font-size: 14px;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .pagination button.active {
+            background-color: #0056b3;
+            font-weight: bold;
+        }
+        
+        /* Custom Scrollbar */
+        .checkbox-group::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .checkbox-group::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .checkbox-group::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .checkbox-group::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.25rem;
+            }
+        
+            .controls-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        
+            .search-container {
+                max-width: 100%;
+            }
+        
+            .dropdown {
+                width: 100%;
+            }
+        
+            .dropdown-button {
+                width: 100%;
+            }
+        
+            .dropdown-content {
+                width: 100%;
+            }
+        
+            table {
+                font-size: 0.875rem;
+            }
+        
+            thead th,
+            tbody td {
+                padding: 0.5rem;
+            }
+        
+            .pagination button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.875rem;
+            }
+                }
+                /* Status Cell Styling */
+ /* Status Cells */
+.status-cell {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-align: center;
+    text-transform: capitalize;
+    width: fit-content;
+    min-width: 120px;
+    margin: auto;
+}
+
+/* Status Colors */
+.status-pending,
+.status-hod_purchase_approved,
+.status-management_approved,
+.status-fm_approved,
+.status-hod_approved,
+.status-test_completed,
+.status-qao_reviewed,
+.status-hod_test_approved,
+.status-fm_test_approved,
+.status-management_test_approved {
+    background-color: #ffa726;
+    color: #ffffff;
+}
+
+.status-completed {
+    background-color: #66bb6a;
+    color: #ffffff;
+}
+
+.status-rejected {
+    background-color: #ef5350;
+    color: #ffffff;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 15px 20px;
+    border-radius: 5px;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    min-width: 250px;
+    max-width: 350px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.notification.warning {
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+    color: #856404;
+}
+
+.notification.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.notification.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.notification.info {
+    background-color: #cce5ff;
+    border-color: #b8daff;
+    color: #004085;
+}
+
+/* Table Rows */
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+    background-color: #f5f5f5;
+}
+
+/* Even Row Striping */
+.clickable-row.even {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Dropdown Styling */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 250px;
+    max-height: 400px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1002;
+    padding: 10px;
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.pagination-controls button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.pagination-controls button:hover {
+    background-color: #f0f0f0;
+}
+
+.pagination-controls button.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+       /* Status Cell Styling */
+.status-cell {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-align: center;
+    text-transform: capitalize;
+    width: fit-content;
+    min-width: 120px;
+    margin: auto;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* In-Progress/Pending Statuses - Orange */
+.status-pending,
+.status-hod_purchase_approved,
+.status-management_approved,
+.status-fm_approved,
+.status-hod_approved,
+.status-test_completed,
+.status-qao_reviewed,
+.status-hod_test_approved,
+.status-fm_test_approved,
+.status-management_test_approved {
+    background-color: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffe0b2;
+}
+
+/* Completed Status - Green */
+.status-completed {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+/* Rejected Status - Red */
+.status-rejected {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+/* Hover effects */
+.status-cell:hover {
+    filter: brightness(0.95);
+}
+        /* Print Styles */
+        @media print {
+            .header,
+            .side-nav,
+            .controls-container,
+            .pagination {
+                display: none;
+            }
+        
+            table {
+                box-shadow: none;
+            }
+        
+            tbody tr:hover {
+                background-color: transparent;
+            }
+        }
+        .notification {
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+    
+        .notification.warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+            color: #856404;
+        }
+    
+        .notification.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    
+        .notification.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    
+        .notification.info {
+            background-color: #cce5ff;
+            border-color: #b8daff;
+            color: #004085;
+        }
+
+    .status-cell {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        text-align: center;
+        text-transform: capitalize;
+        width: fit-content;
+        min-width: 120px;
+        margin: auto;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f5f5f5;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        min-width: 250px;
+        max-height: 400px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1002;
+        padding: 10px;
+    }
+
+    .dropdown-content.show {
+        display: block;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 380px;
+        overflow-y: auto;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        padding: 6px 8px;
+        cursor: pointer;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    }
+
+    .checkbox-group label:hover {
+        background-color: #f5f5f5;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 15px 20px;
+        border-radius: 5px;
+        opacity: 1;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        color: #333;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    
+    .nav-link:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .nav-link i {
+        margin-right: 8px;
+    }
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+    </style>
+</head>
+<body> 
+    <!-- Side Navigation -->
+    <div id="sideNav" class="side-nav">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+        <a href="{% url 'dashboard' %}" style="color: white; text-decoration: none;">Back to Dashboard</a>
+        <a href="{% url 'pending' %}">Pending Reports</a>
+        {% comment %} <a href="{% url 'fill_page' %}">Fill Page</a> {% endcomment %}
+        
+        <a href="{% url 'test_request' %}">Test Request</a>
+        <a href="{% url 'logout' %}" class="nav-link" onclick="return confirmLogout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+    
+
+    <!-- Header Section -->
+    <div class="header">
+        <h1><a href="{% url 'dashboard' %}">Kapa Oil Refineries Ltd</a></h1>
+        <div class="hamburger" onclick="openNav()">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+
+
+    <div class="controls-container">
+      
+        <div class="dropdown">
+            <button type="button" class="dropdown-button">Select Columns</button>
+            <div class="dropdown-content">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" data-action="select-all"> Select All</label>
+                    <label><input type="checkbox" data-action="unselect-all"> Unselect All</label>
+                    <label><input type="checkbox" checked data-column="0"> RMTR No</label>
+                    <label><input type="checkbox" checked data-column="1"> Supplier</label>
+                    <label><input type="checkbox" checked data-column="2"> Date</label>
+                    <label><input type="checkbox" checked data-column="3"> Material Type</label>
+                    <label><input type="checkbox" checked data-column="4"> Sub Category</label>
+                    <label><input type="checkbox" checked data-column="5"> Tests</label>
+                    <label><input type="checkbox" checked data-column="6"> Plant</label>
+                    <label><input type="checkbox" checked data-column="7"> Approved Management</label>
+                    <label><input type="checkbox" checked data-column="8"> Requested By</label>
+                    <label><input type="checkbox" checked data-column="9"> Justification</label>
+                    <label><input type="checkbox" checked data-column="10"> UOM</label>
+                    <label><input type="checkbox" checked data-column="11"> Quantity</label>
+                    <label><input type="checkbox" checked data-column="12"> Specs</label>
+                    <label><input type="checkbox" checked data-column="13"> Image</label>
+                    <label><input type="checkbox" checked data-column="14"> Status</label>
+                    <label><input type="checkbox" checked data-column="15"> Date Created</label>
+                    <label><input type="checkbox" checked data-column="16"> HOD Purchase Priority</label>
+                    <label><input type="checkbox" checked data-column="17"> HOD Purchase Sensitivity</label>
+                    <label><input type="checkbox" checked data-column="18"> HOD Purchase Approved</label>
+                    <label><input type="checkbox" checked data-column="19"> HOD Purchase Rejected</label>
+                    <label><input type="checkbox" checked data-column="20"> HOD Purchase Comments</label>
+                    <label><input type="checkbox" checked data-column="21"> HOD Purchase Date Approved</label>
+                    <label><input type="checkbox" checked data-column="22"> HOD Purchase Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="23"> Management Approved</label>
+                    <label><input type="checkbox" checked data-column="24"> Management Rejected</label>
+                    <label><input type="checkbox" checked data-column="25"> Management Comments</label>
+                    <label><input type="checkbox" checked data-column="26"> Management Date Approved</label>
+                    <label><input type="checkbox" checked data-column="27"> Management Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="28"> FM Approved</label>
+                    <label><input type="checkbox" checked data-column="29"> FM Rejected</label>
+                    <label><input type="checkbox" checked data-column="30"> FM Comments</label>
+                    <label><input type="checkbox" checked data-column="31"> FM Date Approved</label>
+                    <label><input type="checkbox" checked data-column="32"> FM Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="33"> HOD Approved</label>
+                    <label><input type="checkbox" checked data-column="34"> HOD Rejected</label>
+                    <label><input type="checkbox" checked data-column="35"> HOD Comments</label>
+                    <label><input type="checkbox" checked data-column="36"> HOD Date Approved</label>
+                    <label><input type="checkbox" checked data-column="37"> HOD Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="38"> Tests Carried Out</label>
+                    <label><input type="checkbox" checked data-column="39"> Sample Results</label>
+                    <label><input type="checkbox" checked data-column="40"> Raw Material Results</label>
+                    <label><input type="checkbox" checked data-column="41"> Kapa Standards</label>
+                    <label><input type="checkbox" checked data-column="42"> Test Image</label>
+                    <label><input type="checkbox" checked data-column="43"> Lab QC Comments</label>
+                    <label><input type="checkbox" checked data-column="44"> Tests Done By</label>
+                    <label><input type="checkbox" checked data-column="45"> QAO Approved</label>
+                    <label><input type="checkbox" checked data-column="46"> QAO Rejected</label>
+                    <label><input type="checkbox" checked data-column="47"> QAO Comments</label>
+                    <label><input type="checkbox" checked data-column="48"> QAO Date Approved</label>
+                    <label><input type="checkbox" checked data-column="49"> QAO Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="50"> HOD Test Approved</label>
+                    <label><input type="checkbox" checked data-column="51"> HOD Test Rejected</label>
+                    <label><input type="checkbox" checked data-column="52"> HOD Test Comments</label>
+                    <label><input type="checkbox" checked data-column="53"> HOD Test Date Approved</label>
+                    <label><input type="checkbox" checked data-column="54"> HOD Test Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="55"> FM Test Approved</label>
+                    <label><input type="checkbox" checked data-column="56"> FM Test Rejected</label>
+                    <label><input type="checkbox" checked data-column="57"> FM Test Comments</label>
+                    <label><input type="checkbox" checked data-column="58"> FM Test Date Approved</label>
+                    <label><input type="checkbox" checked data-column="59"> FM Test Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="60"> Management Test Approved</label>
+                    <label><input type="checkbox" checked data-column="61"> Management Test Rejected</label>
+                    <label><input type="checkbox" checked data-column="62"> Management Test Comments</label>
+                    <label><input type="checkbox" checked data-column="63"> Management Test Date Approved</label>
+                    <label><input type="checkbox" checked data-column="64"> Management Test Date Rejected</label>
+                    <label><input type="checkbox" checked data-column="65"> Milan Approved</label>
+                    <label><input type="checkbox" checked data-column="66"> Milan Rejected</label>
+                    <label><input type="checkbox" checked data-column="67"> Milan Comments</label>
+                    <label><input type="checkbox" checked data-column="68"> Milan Date Approved</label>
+                    <label><input type="checkbox" checked data-column="69"> Milan Date Rejected</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search...">
+        </div>
+    </div> 
+
+
+    <!-- Table Section -->
+    <table id="rmtrTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">RMTR No</th>
+                <th onclick="sortTable(1)">Supplier</th>
+                <th onclick="sortTable(2)">Date</th>
+                <th onclick="sortTable(3)">Material Type</th>
+                <th onclick="sortTable(4)">Sub Category</th>
+                <th onclick="sortTable(5)">Tests</th>
+                <th onclick="sortTable(6)">Plant</th>
+                <th onclick="sortTable(7)">Approved Management</th>
+                <th onclick="sortTable(8)">Requested By</th>
+                <th onclick="sortTable(9)">Justification</th>
+                <th onclick="sortTable(10)">Status</th>
+                <th onclick="sortTable(11)">Quantity</th>
+                <th onclick="sortTable(12)">Specs</th>
+                
+                <th onclick="sortTable(14)">UOM</th>
+                <th onclick="sortTable(15)">Date Created</th>
+                <th onclick="sortTable(13)">Image</th>
+                <th onclick="sortTable(16)">HOD Purchase Priority</th>
+                <th onclick="sortTable(17)">HOD Purchase Sensitivity</th>
+                <th onclick="sortTable(18)">HOD Purchase Approved</th>
+                <th onclick="sortTable(19)">HOD Purchase Rejected</th>
+                <th onclick="sortTable(20)">HOD Purchase Comments</th>
+                <th onclick="sortTable(21)">HOD Purchase Date Approved</th>
+                <th onclick="sortTable(22)">HOD Purchase Date Rejected</th>
+                <th onclick="sortTable(23)">Management Approved</th>
+                <th onclick="sortTable(24)">Management Rejected</th>
+                <th onclick="sortTable(25)">Management Comments</th>
+                <th onclick="sortTable(26)">Management Date Approved</th>
+                <th onclick="sortTable(27)">Management Date Rejected</th>
+                <th onclick="sortTable(28)">FM Approved</th>
+                <th onclick="sortTable(29)">FM Rejected</th>
+                <th onclick="sortTable(30)">FM Comments</th>
+                <th onclick="sortTable(31)">FM Date Approved</th>
+                <th onclick="sortTable(32)">FM Date Rejected</th>
+                <th onclick="sortTable(33)">HOD Approved</th>
+                <th onclick="sortTable(34)">HOD Rejected</th>
+                <th onclick="sortTable(35)">HOD Comments</th>
+                <th onclick="sortTable(36)">HOD Date Approved</th>
+                <th onclick="sortTable(37)">HOD Date Rejected</th>
+                <th onclick="sortTable(38)">Tests Carried Out</th>
+                <th onclick="sortTable(39)">Sample Results</th>
+                <th onclick="sortTable(40)">Raw Material Results</th>
+                <th onclick="sortTable(41)">Kapa Standards</th>
+                <th onclick="sortTable(42)">Test Image</th>
+                <th onclick="sortTable(43)">Lab QC Comments</th>
+                <th onclick="sortTable(44)">Tests Done By</th>
+                <th onclick="sortTable(45)">QAO Approved</th>
+                <th onclick="sortTable(46)">QAO Rejected</th>
+                <th onclick="sortTable(47)">QAO Comments</th>
+                <th onclick="sortTable(48)">QAO Date Approved</th>
+                <th onclick="sortTable(49)">QAO Date Rejected</th>
+                <th onclick="sortTable(50)">HOD Test Approved</th>
+                <th onclick="sortTable(51)">HOD Test Rejected</th>
+                <th onclick="sortTable(52)">HOD Test Comments</th>
+                <th onclick="sortTable(53)">HOD Test Date Approved</th>
+                <th onclick="sortTable(54)">HOD Test Date Rejected</th>
+                <th onclick="sortTable(55)">FM Test Approved</th>
+                <th onclick="sortTable(56)">FM Test Rejected</th>
+                <th onclick="sortTable(57)">FM Test Comments</th>
+                <th onclick="sortTable(58)">FM Test Date Approved</th>
+                <th onclick="sortTable(59)">FM Test Date Rejected</th>
+                <th onclick="sortTable(60)">Management Test Approved</th>
+                <th onclick="sortTable(61)">Management Test Rejected</th>
+                <th onclick="sortTable(62)">Management Test Comments</th>
+                <th onclick="sortTable(63)">Management Test Date Approved</th>
+                <th onclick="sortTable(64)">Management Test Date Rejected</th>
+                <th onclick="sortTable(65)">Milan Approved</th>
+                <th onclick="sortTable(66)">Milan Rejected</th>
+                <th onclick="sortTable(67)">Milan Comments</th>
+                <th onclick="sortTable(68)">Milan Date Approved</th>
+                <th onclick="sortTable(69)">Milan Date Rejected</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in pending_reports %}
+            <!--<tr onclick="window.location.href='{% url 'fill_page' report.rmtr_no %}'">'">  
+                <tr onclick="window.location.href='{% url 'hod_purchase_approval' rmtr_no=report.rmtr_no %}'">
+                <tr onclick="handleRowClick('{{ report.rmtr_no }}', '{{ report.status }}', {{ user_groups|safe }})">-->
+                <tr 
+                    data-rmtr-no="{{ report.rmtr_no }}"
+                    data-status="{{ report.status|lower }}"
+                    data-user-groups="{{ user.groups.all|join:',' }}"
+                    class="clickable-row"
+                >
+                <td>{{ report.rmtr_no }}</td>
+                <td>{{ report.supplier }}</td>
+                <td>{{ report.date }}</td>
+                <td>{{ report.material_type }}</td>
+                <td>{{ report.sub_category }}</td>
+                <td>{{ report.tests }}</td>
+                <td>{{ report.plant }}</td>
+                <td>{{ report.approved_mgt }}</td>
+                <td>{{ report.requested_by }}</td>
+                <td>{{ report.justification }}</td>
+                
+                <td>{{ report.status }}</td>
+                <td>{{ report.quantity }}</td>
+                <td>{{ report.specs }}</td>
+                
+                <td>{{ report.uom }}</td>
+               
+                <td>{{ report.date_created }}</td>
+                <td>{{ report.test_image}}</td>
+                <td>{{ report.hod_purchase_priority }}</td>
+                <td>{{ report.hod_purchase_sensitivity }}</td>
+                <td>{{ report.hod_purchase_approved }}</td>
+                <td>{{ report.hod_purchase_rejected }}</td>
+                <td>{{ report.hod_purchase_comments }}</td>
+                <td>{{ report.hod_purchase_date_approved }}</td>
+                <td>{{ report.hod_purchase_date_rejected }}</td>
+                <td>{{ report.management_approved }}</td>
+                <td>{{ report.management_rejected }}</td>
+                <td>{{ report.management_comments }}</td>
+                <td>{{ report.management_date_approved }}</td>
+                <td>{{ report.management_date_rejected }}</td>
+                <td>{{ report.fm_approved }}</td>
+                <td>{{ report.fm_rejected }}</td>
+                <td>{{ report.fm_comments }}</td>
+                <td>{{ report.fm_date_approved }}</td>
+                <td>{{ report.fm_date_rejected }}</td>
+                <td>{{ report.hod_approved }}</td>
+                <td>{{ report.hod_rejected }}</td>
+                <td>{{ report.hod_comments }}</td>
+                <td>{{ report.hod_date_approved }}</td>
+                <td>{{ report.hod_date_rejected }}</td>
+                <td>{{ report.tests_carried_out }}</td>
+                <td>{{ report.sample_results }}</td>
+                <td>{{ report.raw_material_results }}</td>
+                <td>{{ report.kapa_standards }}</td>
+                <td>{{ report.test_image }}</td>
+                <td>{{ report.lab_qc_comments }}</td>
+                <td>{{ report.tests_done_by }}</td>
+                <td>{{ report.qao_approved }}</td>
+                <td>{{ report.qao_rejected }}</td>
+                <td>{{ report.qao_comments }}</td>
+                <td>{{ report.qao_date_approved }}</td>
+                <td>{{ report.qao_date_rejected }}</td>
+                <td>{{ report.hod_test_approved }}</td>
+                <td>{{ report.hod_test_rejected }}</td>
+                <td>{{ report.hod_test_comments }}</td>
+                <td>{{ report.hod_test_date_approved }}</td>
+                <td>{{ report.hod_test_date_rejected }}</td>
+                <td>{{ report.fm_test_approved }}</td>
+                <td>{{ report.fm_test_rejected }}</td>
+                <td>{{ report.fm_test_comments }}</td>
+                <td>{{ report.fm_test_date_approved }}</td>
+                <td>{{ report.fm_test_date_rejected }}</td>
+                <td>{{ report.management_test_approved }}</td>
+                <td>{{ report.management_test_rejected }}</td>
+                <td>{{ report.management_test_comments }}</td>
+                <td>{{ report.management_test_date_approved }}</td>
+                <td>{{ report.management_test_date_rejected }}</td>
+                <td>{{ report.milan_approved }}</td>
+                <td>{{ report.milan_rejected }}</td>
+                <td>{{ report.milan_comments }}</td>
+                <td>{{ report.milan_date_approved }}</td>
+                <td>{{ report.milan_date_rejected }}</td>
+                <td>{{ report.priority }}</td>
+                <td>{{ report.sensitivity }}</td>
+                <td>{{ report.plant }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination Section -->
+    <div class="pagination" id="pagination"></div>
+
+
+
+
+<script>
+
+    //logout
+    function confirmLogout() {
+        return confirm('Do you want to logout?');}
+
+        // Configuration
+        const CONFIG = {
+            rowsPerPage: 50,
+            dateFormat: 'YYYY-MM-DD',
+            debugMode: true
+        };
+    
+               // Status Configuration
+            const STATUS_CONFIG = {
+                'pending': {
+                    next_stage: 'hod_purchase_approved',
+                    allowed_groups: ['HOD_PURCHASE'],
+                    description: 'Pending HOD Purchase Approval',
+                    route: 'hod_purchase_approval'
+                },
+                'hod_purchase_approved': {
+                    next_stage: 'management_approved',
+                    allowed_groups: ['MANAGEMENT'],
+                    description: 'Pending Management Approval',
+                    route: 'management_approval'
+                },
+                'management_approved': {
+                    next_stage: 'fm_approved',
+                    allowed_groups: ['FM'],
+                    description: 'Pending Factory Manager Approval',
+                    route: 'fm_approval'
+                },
+                'fm_approved': {
+                    next_stage: 'hod_approved',
+                    allowed_groups: ['HOD'],
+                    description: 'Pending HOD Approval',
+                    route: 'hod_approval'
+                },
+                'hod_approved': {
+                    next_stage: 'test_completed',
+                    allowed_groups: ['LAB'],
+                    description: 'Pending Lab Tests',
+                    route: 'fill_page'
+                },
+                'test_completed': {
+                    next_stage: 'qao_reviewed',
+                    allowed_groups: ['QAO'],
+                    description: 'Pending QAO Review',
+                    route: 'qao_test_approval'
+                },
+                'qao_reviewed': {
+                    next_stage: 'hod_test_approved',
+                    allowed_groups: ['HOD_TEST'],
+                    description: 'Pending HOD Test Approval',
+                    route: 'hod_test_approval'
+                },
+                'hod_test_approved': {
+                    next_stage: 'fm_test_approved',
+                    allowed_groups: ['FM_TEST'],
+                    description: 'Pending Factory Manager Test Approval',
+                    route: 'fm_test_approval'
+                },
+                'fm_test_approved': {
+                    next_stage: 'management_test_approved',
+                    allowed_groups: ['MANAGEMENT_TEST, MANAGEMENT'],
+                    description: 'Pending Management Test Approval',
+                    route: 'management_test_approval'
+                },
+                'management_test_approved': {
+                    next_stage: 'completed',
+                    allowed_groups: ['MILAN'],
+                    description: 'Pending Milan Approval',
+                    route: 'milan_approval'
+                },
+                'completed': {
+                    description: 'Completed'
+                },
+                'rejected': {
+                    description: 'Rejected'
+                }
+            };
+        
+            // Core DOM Elements
+            let elements = {
+                table: null,
+                tbody: null,
+                pagination: null,
+                searchInput: null,
+                sideNav: null,
+                dropdownButton: null,
+                dropdownContent: null,
+                checkboxGroup: null
+            };
+        
+            // Column States Management
+            const columnStates = new Map();
+        
+            // Initialize Elements
+            function initializeElements() {
+                elements = {
+                    table: document.getElementById("rmtrTable"),
+                    tbody: document.getElementById("rmtrTable")?.tBodies[0],
+                    pagination: document.getElementById("pagination"),
+                    searchInput: document.getElementById("searchInput"),
+                    sideNav: document.getElementById("sideNav"),
+                    dropdownButton: document.querySelector('.dropdown-button'),
+                    dropdownContent: document.querySelector('.dropdown-content'),
+                    checkboxGroup: document.querySelector('.checkbox-group')
+                };
+                return elements;
+            }
+        
+            // Enhanced Row Click Handler with Dropdown Management
+            function enhanceHandleRowClick(event) {
+                // Close any open dropdowns
+                const dropdowns = document.getElementsByClassName('dropdown-content');
+                for (let dropdown of dropdowns) {
+                    if (dropdown.classList.contains('show')) {
+                        dropdown.classList.remove('show');
+                    }
+                }
+        
+                handleRowClick(event);
+            }
+        
+            // Row Click Handler
+            function handleRowClick(event) {
+                if (event.target.tagName.toLowerCase() === 'button' || 
+                    event.target.tagName.toLowerCase() === 'a') {
+                    return;
+                }
+        
+                const row = event.currentTarget;
+                const rmtrNo = row.getAttribute('data-rmtr-no');
+                const status = row.getAttribute('data-status')?.toLowerCase();
+                let userGroups = [];
+        
+                try {
+                    const groupsData = row.getAttribute('data-user-groups');
+                    userGroups = groupsData?.split(',').map(g => g.trim().toUpperCase()) || [];
+                    console.log('User Groups:', userGroups, 'Status:', status);
+                } catch (e) {
+                    console.error('Error parsing user groups:', e);
+                    return;
+                }
+        
+                getTargetRoute(status, userGroups).then((response) => {
+                    const targetRoute = response.targetRoute;
+                    const statusConfig = STATUS_CONFIG[status];
+                    if (targetRoute && rmtrNo) {
+                        console.log('Redirecting to:', `/${targetRoute}/${rmtrNo}/`);
+                        window.location.href = `/${targetRoute}/${rmtrNo}/`;
+                    } else {
+                        showNotification(
+                            'Access Denied',
+                            `This request requires ${statusConfig?.description || 'unknown'} (${statusConfig?.allowed_groups?.[0] || 'unknown'} approval)`,
+                            'warning'
+                        );
+                    }
+                });
+            }
+        
+            async function getTargetRoute(status, userGroups) {
+                const response = await fetch(`/get-target-route?status=${status}&user_groups=${userGroups.join(',')}`);
+                return await response.json();
+            }
+        
+            // Initialize elements on page load
+            window.addEventListener('DOMContentLoaded', initializeElements);
+       
+// Status Styling Functions
+function applyStatusStyling() {
+    const statusCells = document.querySelectorAll('td:nth-child(15)');
+    
+    statusCells.forEach(cell => {
+        const status = cell.textContent.trim().toLowerCase();
+        const config = STATUS_CONFIG[status];
+        
+        if (!config) return;
+
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'status-cell';
+        statusDiv.textContent = formatStatus(status);
+        
+        Object.assign(statusDiv.style, {
+            backgroundColor: config.color,
+            color: config.textColor || '#ffffff'
+        });
+        
+        cell.innerHTML = '';
+        cell.appendChild(statusDiv);
+    });
+}
+
+// Search Functionality
+function setupSearch() {
+    if (!elements.searchInput || !elements.tbody) return;
+
+    const searchTable = debounce(() => {
+        const searchText = elements.searchInput.value.toLowerCase();
+        const rows = Array.from(elements.tbody.getElementsByTagName('tr'));
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const text = Array.from(row.cells)
+                .map(cell => cell.textContent || cell.innerText)
+                .join(' ')
+                .toLowerCase();
+
+            const isVisible = text.includes(searchText);
+            row.style.display = isVisible ? '' : 'none';
+            row.classList.toggle('hidden', !isVisible);
+            if (isVisible) visibleCount++;
+        });
+
+        setupPagination(visibleCount);
+        updateCurrentPage();
+        applyStatusStyling();
+    }, 300);
+
+    elements.searchInput.addEventListener('input', searchTable);
+}
+
+// Table Sorting
+function sortTable(columnIndex) {
+    const tbody = elements.tbody;
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.rows);
+    const isAscending = tbody.getAttribute('data-sort') === columnIndex + '-asc';
+    
+    rows.sort((a, b) => {
+        const aValue = a.cells[columnIndex]?.textContent || '';
+        const bValue = b.cells[columnIndex]?.textContent || '';
+        
+        // Date comparison
+        const aDate = new Date(aValue);
+        const bDate = new Date(bValue);
+        if (aDate.toString() !== 'Invalid Date' && bDate.toString() !== 'Invalid Date') {
+            return isAscending ? bDate - aDate : aDate - bDate;
+        }
+        
+        // Numeric comparison
+        const aNum = parseFloat(aValue);
+        const bNum = parseFloat(bValue);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return isAscending ? bNum - aNum : aNum - bNum;
+        }
+        
+        // String comparison
+        return isAscending ? 
+            bValue.localeCompare(aValue) : 
+            aValue.localeCompare(bValue);
+    });
+
+    tbody.setAttribute('data-sort', isAscending ? columnIndex + '-desc' : columnIndex + '-asc');
+    rows.forEach(row => tbody.appendChild(row));
+    updateTableStripes();
+    applyStatusStyling();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Column visibility management
+    const tableColumns = {};
+    const table = document.getElementById('rmtrTable');
+    
+    // Initialize column visibility state
+    function initializeColumnVisibility() {
+        const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"][data-column]');
+        checkboxes.forEach(checkbox => {
+            const columnIndex = parseInt(checkbox.getAttribute('data-column'));
+            tableColumns[columnIndex] = checkbox.checked;
+            
+            checkbox.addEventListener('change', function() {
+                toggleColumn(columnIndex, this.checked);
+                saveColumnState();
+            });
+        });
+        
+        // Load saved state
+        loadColumnState();
+        applyColumnVisibility();
+    }
+    
+    // Toggle column visibility
+    function toggleColumn(columnIndex, visible) {
+        tableColumns[columnIndex] = visible;
+        const cells = table.querySelectorAll(`tr > *:nth-child(${columnIndex + 1})`);
+        cells.forEach(cell => {
+            cell.style.display = visible ? '' : 'none';
+        });
+    }
+    
+    // Select/Unselect all handler
+    function setupSelectAllHandlers() {
+        const selectAll = document.querySelector('input[data-action="select-all"]');
+        const unselectAll = document.querySelector('input[data-action="unselect-all"]');
+        const columnCheckboxes = document.querySelectorAll('.checkbox-group input[data-column]');
+        
+        selectAll.addEventListener('change', function() {
+            if (this.checked) {
+                columnCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                    const columnIndex = parseInt(checkbox.getAttribute('data-column'));
+                    toggleColumn(columnIndex, true);
+                });
+                unselectAll.checked = false;
+            }
+            saveColumnState();
+        });
+        
+        unselectAll.addEventListener('change', function() {
+            if (this.checked) {
+                columnCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                    const columnIndex = parseInt(checkbox.getAttribute('data-column'));
+                    toggleColumn(columnIndex, false);
+                });
+                selectAll.checked = false;
+            }
+            saveColumnState();
+        });
+    }
+    
+    // Save column state to localStorage
+    function saveColumnState() {
+        const state = {};
+        const checkboxes = document.querySelectorAll('.checkbox-group input[data-column]');
+        checkboxes.forEach(checkbox => {
+            const columnIndex = checkbox.getAttribute('data-column');
+            state[columnIndex] = checkbox.checked;
+        });
+        localStorage.setItem('columnVisibility', JSON.stringify(state));
+        showSaveNotification();
+    }
+    
+    // Load column state from localStorage
+    function loadColumnState() {
+        try {
+            const savedState = localStorage.getItem('columnVisibility');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                const checkboxes = document.querySelectorAll('.checkbox-group input[data-column]');
+                checkboxes.forEach(checkbox => {
+                    const columnIndex = checkbox.getAttribute('data-column');
+                    if (state.hasOwnProperty(columnIndex)) {
+                        checkbox.checked = state[columnIndex];
+                        toggleColumn(parseInt(columnIndex), state[columnIndex]);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error loading column state:', e);
+        }
+    }
+    
+    // Apply current visibility state
+    function applyColumnVisibility() {
+        Object.keys(tableColumns).forEach(columnIndex => {
+            toggleColumn(parseInt(columnIndex), tableColumns[columnIndex]);
+        });
+    }
+    
+    // Show save notification
+    function showSaveNotification() {
+        const notification = document.createElement('div');
+        notification.className = 'notification notification-success';
+        notification.textContent = 'Column preferences saved!';
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.backgroundColor = '#4CAF50';
+        notification.style.color = 'white';
+        notification.style.padding = '10px 20px';
+        notification.style.borderRadius = '4px';
+        notification.style.zIndex = '1000';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => notification.remove(), 500);
+        }, 2000);
+    }
+    
+    // Dropdown toggle
+    function setupDropdownToggle() {
+        const dropdownButton = document.querySelector('.dropdown-button');
+        const dropdownContent = document.querySelector('.dropdown-content');
+        
+        dropdownButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownContent.classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdownContent.contains(e.target) && !dropdownButton.contains(e.target)) {
+                dropdownContent.classList.remove('show');
+            }
+        });
+    }
+    
+    // Initialize everything
+    function initialize() {
+        initializeColumnVisibility();
+        setupSelectAllHandlers();
+        setupDropdownToggle();
+        
+        // Add some styling to the dropdown
+        const dropdownContent = document.querySelector('.dropdown-content');
+        dropdownContent.style.maxHeight = '400px';
+        dropdownContent.style.overflowY = 'auto';
+    }
+    
+    // Run initialization
+    initialize();
+});
+
+// Add these CSS styles to your existing styles
+const newStyles = `
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 250px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 1000;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    
+    .dropdown-content.show {
+        display: block;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    
+    .checkbox-group label:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        cursor: pointer;
+    }
+    
+    .notification {
+        transition: opacity 0.5s ease;
+    }
+    
+    .notification-success {
+        background-color: #4CAF50;
+    }
+`;
+
+// Add the styles to the document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = newStyles;
+document.head.appendChild(styleSheet);
+
+
+
+// Column Visibility Management
+function setupColumnToggles() {
+    const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const columnIndex = this.getAttribute('data-column');
+            if (columnIndex === null) return;
+            
+            const table = document.getElementById('rmtrTable');
+            const cells = table.getElementsByTagName('tr');
+            
+            for (let cell of cells) {
+                const targetCell = cell.cells[columnIndex];
+                if (targetCell) {
+                    targetCell.style.display = this.checked ? '' : 'none';
+                }
+            }
+            
+            // Save state
+            saveColumnStates();
+        });
+    });
+
+    // Select All Handler
+    const selectAllCheckbox = document.querySelector('[data-action="select-all"]');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                if (cb.getAttribute('data-action') !== 'unselect-all') {
+                    cb.checked = this.checked;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    }
+
+    // Unselect All Handler
+    const unselectAllCheckbox = document.querySelector('[data-action="unselect-all"]');
+    if (unselectAllCheckbox) {
+        unselectAllCheckbox.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                if (cb.getAttribute('data-action') !== 'select-all') {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    }
+}
+
+// Pagination Functions
+function setupPagination(totalRows) {
+    if (!elements.pagination || !elements.tbody) return;
+    
+    const visibleRows = totalRows || Array.from(elements.tbody.rows)
+        .filter(row => !row.classList.contains('hidden')).length;
+        
+    const pageCount = Math.ceil(visibleRows / CONFIG.rowsPerPage);
+    elements.pagination.innerHTML = '';
+    
+    if (pageCount <= 1) return;
+
+    const controls = createPaginationControls(pageCount);
+    elements.pagination.appendChild(controls);
+    
+    updateCurrentPage();
+}
+
+function createPaginationControls(pageCount) {
+    const container = document.createElement('div');
+    container.className = 'pagination-controls';
+
+    if (pageCount > 1) {
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '←';
+        prevButton.onclick = () => changePage(Math.max(1, getCurrentPage() - 1));
+        container.appendChild(prevButton);
+    }
+
+    for (let i = 1; i <= pageCount; i++) {
+        const button = document.createElement('button');
+        button.innerText = i;
+        button.onclick = () => changePage(i);
+        container.appendChild(button);
+    }
+
+    if (pageCount > 1) {
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = '→';
+        nextButton.onclick = () => changePage(Math.min(pageCount, getCurrentPage() + 1));
+        container.appendChild(nextButton);
+    }
+
+    return container;
+}
+
+function changePage(newPage) {
+    if (!elements.tbody) return;
+    const currentPage = getCurrentPage();
+    if (currentPage === newPage) return;
+    setCurrentPage(newPage);
+    updateCurrentPage();
+}
+
+function getCurrentPage() {
+    return parseInt(elements.tbody.getAttribute('data-page') || '1');
+}
+
+function setCurrentPage(page) {
+    elements.tbody.setAttribute('data-page', page);
+}
+
+function updateCurrentPage() {
+    if (!elements.tbody) return;
+    
+    const currentPage = getCurrentPage();
+    const start = (currentPage - 1) * CONFIG.rowsPerPage;
+    const end = start + CONFIG.rowsPerPage;
+    
+    Array.from(elements.tbody.rows).forEach((row, index) => {
+        if (row.classList.contains('hidden')) {
+            row.style.display = 'none';
+        } else {
+            row.style.display = (index >= start && index < end) ? '' : 'none';
+        }
+    });
+
+    const buttons = elements.pagination?.querySelectorAll('button');
+    buttons?.forEach(button => {
+        button.classList.toggle('active', button.innerText === currentPage.toString());
+    });
+}
+
+// Column State Management
+function saveColumnStates() {
+    const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        const columnIndex = checkbox.getAttribute('data-column');
+        if (columnIndex !== null) {
+            columnStates.set(columnIndex, checkbox.checked);
+        }
+    });
+}
+
+function restoreColumnStates() {
+    const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        const columnIndex = checkbox.getAttribute('data-column');
+        if (columnIndex !== null && columnStates.has(columnIndex)) {
+            checkbox.checked = columnStates.get(columnIndex);
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// Dropdown Management
+function setupDropdownHandlers() {
+    if (!elements.dropdownButton || !elements.dropdownContent) return;
+
+    // Toggle dropdown
+    elements.dropdownButton.addEventListener('click', function(event) {
+        event.stopPropagation();
+        elements.dropdownContent.classList.toggle('show');
+        updateDropdownPosition();
+    });
+
+    // Prevent dropdown from closing when clicking inside
+    elements.dropdownContent.addEventListener('click', event => {
+        event.stopPropagation();
+    });
+
+    // Handle checkbox group clicks
+    elements.checkboxGroup?.addEventListener('click', event => {
+        event.stopPropagation();
+    });
+
+    // Close dropdown when clicking outside
+    window.addEventListener('click', () => {
+        elements.dropdownContent?.classList.remove('show');
+    });
+
+    // Close dropdown on ESC key
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            elements.dropdownContent?.classList.remove('show');
+        }
+    });
+
+    // Update dropdown position on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(updateDropdownPosition, 250);
+    });
+}
+
+function updateDropdownPosition() {
+    if (!elements.dropdownButton || !elements.dropdownContent || 
+        !elements.dropdownContent.classList.contains('show')) return;
+
+    const buttonRect = elements.dropdownButton.getBoundingClientRect();
+    elements.dropdownContent.style.top = `${buttonRect.bottom + window.scrollY}px`;
+    elements.dropdownContent.style.left = `${buttonRect.left + window.scrollX}px`;
+}
+
+// Utility Functions
+function formatStatus(status) {
+    if (!status) return '';
+    return status.replace(/_/g, ' ')
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function updateTableStripes() {
+    if (!elements.tbody) return;
+    Array.from(elements.tbody.rows)
+        .filter(row => row.style.display !== 'none')
+        .forEach((row, index) => {
+            row.classList.toggle('even', index % 2 === 1);
+        });
+}
+
+// Navigation Functions
+function openNav() {
+    if (elements.sideNav) {
+        elements.sideNav.style.width = "250px";
+    }
+}
+
+function closeNav() {
+    if (elements.sideNav) {
+        elements.sideNav.style.width = "0";
+    }
+}
+// Notification System (move this BEFORE any usage)
+function showNotification(title, message, type = 'info') {
+    // Remove any existing notifications first
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    // Create new notification
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    // Add content
+    notification.innerHTML = `
+        <div style="margin-bottom: 5px; font-weight: bold;">${title}</div>
+        <div style="font-size: 0.9em;">${message}</div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(notification);
+    
+    // Fade out and remove after delay
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.5s ease-in-out';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+// Single initialization block
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize components
+    initializeElements();
+    setupSearch();
+    setupPagination();
+    setupColumnToggles();
+    setupDropdownHandlers();
+    applyStatusStyling();
+
+    // Set up row click handlers
+    const rows = document.querySelectorAll('tr.clickable-row');
+    console.log('Found clickable rows:', rows.length);
+    
+    rows.forEach(row => {
+        // Remove any existing listeners first
+        row.removeEventListener('click', handleRowClick);
+        row.removeEventListener('click', enhanceHandleRowClick);
+        
+        // Add click handler
+        row.addEventListener('click', handleRowClick);
+        
+        // Add status tooltip
+        const status = row.getAttribute('data-status')?.toLowerCase();
+        if (status && STATUS_CONFIG[status]) {
+            row.setAttribute('title', STATUS_CONFIG[status].description);
+        }
+    });
+
+    // Set up dropdown
+    const dropdownButton = document.querySelector('.dropdown-button');
+    if (dropdownButton && !dropdownButton.getAttribute('has-click-handler')) {
+        dropdownButton.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownContent = this.nextElementSibling;
+            if (dropdownContent) {
+                dropdownContent.classList.toggle('show');
+            }
+        });
+        dropdownButton.setAttribute('has-click-handler', 'true');
+    }
+
+    // Initialize states
+    saveColumnStates();
+    updateTableStripes();
+
+    console.log('Application initialized successfully');
+});
+
+// Single cleanup handler
+window.addEventListener('unload', function() {
+    const rows = document.querySelectorAll('tr.clickable-row');
+    rows.forEach(row => {
+        row.removeEventListener('click', handleRowClick);
+        row.removeEventListener('click', enhanceHandleRowClick);
+    });
+});
+
+// Export utilities
+window.RMTR = {
+    openNav,
+    closeNav,
+    handleRowClick: enhanceHandleRowClick,
+    showNotification,
+    setupColumnToggles,
+    saveColumnStates,
+    restoreColumnStates,
+    formatStatus,
+    applyStatusStyling,
+    updateDropdownPosition
+};
+
+</script>
+</html>

@@ -1,0 +1,29 @@
+<!-- RMTReports/templates/emails/error_notification.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .error { color: #d32f2f; }
+        .timestamp { color: #666; }
+        .context { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2 class="error">RMTR System Error</h2>
+    <p class="timestamp">Timestamp: {{ timestamp }}</p>
+    
+    <div class="error-details">
+        <h3>Error Message:</h3>
+        <p>{{ error_message }}</p>
+    </div>
+
+    {% if additional_context %}
+    <div class="context">
+        <h3>Additional Context:</h3>
+        <pre>{{ additional_context|pprint }}</pre>
+    </div>
+    {% endif %}
+
+    <p><em>This is an automated error notification from the RMTR System.</em></p>
+</body>
+</html>

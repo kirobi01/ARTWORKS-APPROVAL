@@ -1,0 +1,808 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report Review</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+    
+        /* Header styles */
+        .header {
+            background-color: #CC1C24;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #0B5394;
+        }
+    
+        /* Container styles */
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-size: 24px;
+            color: #fff;
+        }
+        .two-column {
+            display: flex;           /* Use flexbox to arrange items in a row */
+            justify-content: space-between; /* Optional: space between columns */
+        }
+        
+        .column {
+            flex: 1;                /* Allow each column to take up equal space */
+            margin-right: 20px;    /* Optional: space between columns */
+        }
+        
+        .column:last-child {
+            margin-right: 0;       /* Remove margin from the last column */
+        }
+        
+
+        .report-details, .approval-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .report-details table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .report-details th, .report-details td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .report-details th {
+            background-color: #f4f4f4;
+        }
+
+        .approval-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .approval-section div {
+            margin-bottom: 20px;
+        }
+
+        .approval-section label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .approval-section select, .approval-section textarea {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box; /* Ensure padding is included in width */
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .button-container .approved {
+            background-color: #28a745;
+        }
+
+        .button-container .rejected {
+            background-color: #dc3545;
+        }
+
+        .button-container .approved:hover {
+            background-color: #218838;
+        }
+
+        .button-container .rejected:hover {
+            background-color: #c82333;
+        }
+
+        .submitted {
+            background-color: #218838;
+            color: #fff;
+            cursor: not-allowed;
+        }
+
+        .submitted:hover {
+            background-color: #1e7e34;
+        }
+        
+        /* Mobile responsiveness for form layout */
+        @media (max-width: 768px) {
+            .two-column div {
+                flex: 1 1 100%;
+            }
+    
+            .form-container {
+                padding: 20px;
+            }
+        }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+        }
+
+
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            cursor: pointer;
+        }
+
+        .attachments-container {
+            margin-top: 10px;
+        }
+        
+        .attachment-section {
+            margin-bottom: 20px;
+        }
+        
+        .attachment-section h5 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .attachment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .attachment-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .attachment-preview {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .attachment-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        .attachment-actions {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filename {
+            font-size: 12px;
+            color: #666;
+            max-width: 140px;  
+            text-overflow: ellipsis;  
+            overflow: hidden;
+            white-space: nowrap;
+            display: block;
+        }
+        
+        .download-btn, .view-btn {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .view-btn {
+            background-color: #28a745;
+        }
+        
+        .download-btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .view-btn:hover {
+            background-color: #218838;
+        }
+        
+        .pdf-item {
+            min-height: 150px;
+        }
+        
+        .pdf-preview {
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        
+        .pdf-icon {
+            background-color: #dc3545;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        /* PDF viewer modal */
+        .pdf-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+        
+        .pdf-modal-content {
+            position: relative;
+            width: 90%;
+            height: 90%;
+            margin: 2% auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .pdf-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h3><a href="{% url 'dashboard' %}">Raw Materials Test Report - HOD Approval</a></h3>
+        </div>
+    
+        <div class="report-details">
+            <h4>RMTR Report Details</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tbody>
+                    <tr>
+                        <th style="width: 30%; padding: 4px;">RMTR NO:</th>
+                        <td style="padding: 4px;">{{ report.imp_rmtr_no }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Date:</th>
+                        <td style="padding: 4px;">{{ report.date_created }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Supplier:</th>
+                        <td style="padding: 4px;">{{ report.supplier }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Type:</th>
+                        <td style="padding: 4px;">{{ report.material_type }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Sub Category:</th>
+                        <td style="padding: 4px;">{{ report.sub_category }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">UOM:</th>
+                        <td style="padding: 4px;">{{ report.uom }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Quantity:</th>
+                        <td style="padding: 4px;">{{ report.quantity }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Tests:</th>
+                        <td style="padding: 4px;">{{ report.tests }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Plant:</th>
+                        <td style="padding: 4px;">{{ report.plant }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Approved Mgt:</th>
+                        <td style="padding: 4px;">{{ report.approved_mgt }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Requested By:</th>
+                        <td style="padding: 4px;">{{ report.requested_by }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Specs:</th>
+                        <td style="padding: 4px;">{{ report.specs }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Justification:</th>
+                        <td style="padding: 4px;">{{ report.justification }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Material Sensitivity:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_sensitivity }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Priority:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_priority }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">HOD Purchase Comments:</th>
+                        <td style="padding: 4px;">{{ report.hod_purchase_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Management Comments:</th>
+                        <td style="padding: 4px;">{{ report.management_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Second Management Comments:</th>
+                        <td style="padding: 4px;">{{ report.management_comments_2 }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Factory Manager's Comments:</th>
+                        <td style="padding: 4px;">{{ report.fm_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th style="padding: 4px;">Attachments:</th>
+                        <td style="padding: 4px;">
+                            <div class="attachments-container">
+                                <!-- Images Section -->
+                                <div class="attachment-section">
+                                    <h5>Images</h5>
+                                    <div class="attachment-grid">
+                                        {% for attachment in attachments %}
+                                            {% if attachment.file_type == 'image' %}
+                                                <div class="attachment-item">
+                                                    <img src="{{ attachment.file.url }}" 
+                                                         alt="Attachment"
+                                                         class="attachment-preview"
+                                                         onclick="toggleZoom(this)">
+                                                    <div class="attachment-actions">
+                                                        <a href="{{ attachment.file.url }}" 
+                                                           download 
+                                                           class="download-btn">Download</a>
+                                                        <span class="filename">{{ attachment.file.name}}</span>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                    
+                                <!-- PDFs Section -->
+                                <div class="attachment-section">
+                                    <h5>Documents</h5>
+                                    <div class="attachment-grid">
+                                        {% for attachment in attachments %}
+                                            {% if attachment.file_type == 'pdf' %}
+                                                <div class="attachment-item pdf-item">
+                                                    <div class="pdf-preview" onclick="viewPDF('{{ attachment.file.url }}')">
+                                                        <div class="pdf-icon">PDF</div>
+                                                        <span class="filename">{{ attachment.file.name}}</span>
+                                                    </div>
+                                                    <div class="attachment-actions">
+                                                        <a href="{{ attachment.file.url }}" 
+                                                           download 
+                                                           class="download-btn">Download</a>
+                                                        <button onclick="viewPDF('{{ attachment.file.url }}')" 
+                                                                class="view-btn">View</button>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="approval-section">
+            <div class="timeline-container">
+                <h4>HOD Approval</h4>
+                
+                <label for="labtimelines" class="timeline-label">Lab Timelines:</label>
+                <select id="labtimelines" name="labtimelines" class="timeline-select" required>
+                    <option class="placeholder-option" value="" disabled selected>
+                        Please select lab testing duration for follow up purposes
+                    </option>
+                    <option value="1">1 day</option>
+                    <option value="2">2 days</option>
+                    <option value="3">3 days</option>
+                    <option value="4">4 days</option>
+                    <option value="5">5 days</option>
+                    <option value="6">6 days</option>
+                    <option value="7">7 days</option>
+                    <option value="8">8 days</option>
+                    <option value="9">9 days</option>
+                    <option value="10">10 days</option>
+                </select>
+            </div>
+            
+            {% if report.is_rejected %}
+                <div class="alert alert-danger">
+                    <strong>This report has been REJECTED and terminated.</strong><br>
+                    Rejected by: {{ report.rejected_by }}<br>
+                    Rejection Stage: {{ report.rejection_stage }}<br>
+                    Rejection Date: {{ report.rejection_date|date:"Y-m-d H:i" }}<br>
+                    Rejection Comments: {{ report.rejection_comments }}
+                </div>
+            {% endif %}
+            
+            <form id="approvalForm" method="POST" {% if report.is_rejected %}class="disabled"{% endif %}>
+                {% csrf_token %}
+                <input type="hidden" name="imp_rmtr_no" value="{{ report.imp_rmtr_no }}">
+                
+                <div>
+                    <label for="comments">Comments:</label>
+                    <textarea id="comments" name="comments" rows="4" required 
+                              {% if report.is_rejected %}readonly{% endif %}>{{ report.hod_comments }}</textarea>
+                </div>
+                
+                <div class="button-container">
+                    <button type="button" onclick="submitApproval('approved')" class="approved"
+                            {% if report.hod_approved or report.is_rejected %}disabled{% endif %}>
+                        Approve
+                    </button>
+                    
+                    <button type="button" onclick="submitApproval('rejected')" class="rejected"
+                            {% if report.hod_approved or report.is_rejected %}disabled{% endif %}>
+                        Reject
+                    </button> 
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PDF viewer modal -->
+    <div id="pdfModal" class="pdf-modal">
+        <span class="pdf-close" onclick="closePDFViewer()">&times;</span>
+        <div class="pdf-modal-content">
+            <iframe id="pdfViewer" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+    </div>
+        </div>
+    </div>
+    
+<script>
+ // Wait for DOM to be fully loaded before attaching event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all required form elements
+    const form = document.getElementById('approvalForm');
+    const labTimelines = document.getElementById('labtimelines');
+    const commentsField = document.getElementById('comments');
+    
+    // State tracking variables
+    let formChanged = false;
+    let formSubmitted = false;
+    
+    // Image zoom functionality
+    function toggleZoom(img) {
+        if (!img.classList.contains('zoomed')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.onclick = () => {
+                img.classList.remove('zoomed');
+                overlay.remove();
+            };
+            document.body.appendChild(overlay);
+            img.classList.add('zoomed');
+            
+            // Add keyboard event listener for Escape key
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    img.classList.remove('zoomed');
+                    overlay.remove();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+        }
+    }
+
+    // PDF viewer functionality
+    function viewPDF(url) {
+        const modal = document.getElementById('pdfModal');
+        const viewer = document.getElementById('pdfViewer');
+        viewer.src = url;
+        modal.style.display = 'block';
+
+        // Add keyboard event listener for Escape key
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                closePDFViewer();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    }
+
+    function closePDFViewer() {
+        const modal = document.getElementById('pdfModal');
+        const viewer = document.getElementById('pdfViewer');
+        viewer.src = '';
+        modal.style.display = 'none';
+    }
+
+    // Form submission handler
+    function submitApproval(status) {
+        const comments = commentsField.value.trim();
+        
+        // Validate comments
+        if (!comments) {
+            alert('Please provide comments before submitting');
+            commentsField.focus();
+            return;
+        }
+        
+        // Validate lab timeline for approval
+        if (status === 'approved' && labTimelines) {
+            if (!labTimelines.value) {
+                alert('Please select the lab timeline before approving');
+                labTimelines.focus();
+                return;
+            }
+        }
+        
+        // Add confirmation for rejection
+        if (status === 'rejected') {
+            if (!confirm('Are you sure you want to reject this report? This action cannot be undone.')) {
+                return;
+            }
+        }
+        
+        // Prepare form data
+        const formData = new FormData(form);
+        formData.append('approval_status', status);
+        if (labTimelines) {
+            formData.append('labtimelines', labTimelines.value);
+        }
+        
+        // Disable all form controls during submission
+        const formControls = form.querySelectorAll('button, select, textarea');
+        formControls.forEach(control => control.disabled = true);
+        
+        // Mark form as being submitted
+        formSubmitted = true;
+        
+        // Show loading state
+        const submitButton = form.querySelector(`button[onclick*="submitApproval('${status}')"]`);
+        const originalText = submitButton.textContent;
+        submitButton.textContent = status === 'approved' ? 'Approving...' : 'Rejecting...';
+        
+        // Submit the form
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Reset form state before redirecting
+                formChanged = false;
+                formSubmitted = true;
+                
+                alert(status === 'approved' ? 'Request approved successfully!' : 'Request rejected successfully!');
+                
+                // Redirect to pending page
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    window.location.href = '/imp_pending/';
+                }
+            } else {
+                throw new Error(data.message || 'Error updating approval status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error submitting approval. Please try again.');
+            
+            // Reset button text
+            submitButton.textContent = originalText;
+            
+            // Re-enable all form controls
+            formControls.forEach(control => control.disabled = false);
+            
+            // Reset submission state
+            formSubmitted = false;
+        });
+    }
+
+    // Track form changes
+    function markFormAsChanged() {
+        if (!formSubmitted) {
+            formChanged = true;
+        }
+    }
+
+    // Add change listeners to form elements
+    if (commentsField) {
+        commentsField.addEventListener('input', markFormAsChanged);
+    }
+
+    if (labTimelines) {
+        labTimelines.addEventListener('change', markFormAsChanged);
+    }
+
+    // Attach click handlers to images
+    document.querySelectorAll('img[onclick*="toggleZoom"]').forEach(img => {
+        img.onclick = () => toggleZoom(img);
+    });
+
+    // Warning for unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged && !formSubmitted) {
+            const message = 'Changes you made may not be saved.';
+            e.preventDefault();
+            e.returnValue = message;
+            return message;
+        }
+    });
+
+    // Add form submission handler
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+
+        // Add click handlers for approve/reject buttons
+        const approveButton = form.querySelector('button[onclick*="submitApproval(\'approved\')"]');
+        const rejectButton = form.querySelector('button[onclick*="submitApproval(\'rejected\')"]');
+        
+        if (approveButton) {
+            approveButton.onclick = () => submitApproval('approved');
+        }
+        
+        if (rejectButton) {
+            rejectButton.onclick = () => submitApproval('rejected');
+        }
+    }
+
+    // Add click handler for PDF modal close button
+    const pdfCloseButton = document.querySelector('.pdf-close');
+    if (pdfCloseButton) {
+        pdfCloseButton.onclick = closePDFViewer;
+    }
+
+    // Make functions available globally
+    window.toggleZoom = toggleZoom;
+    window.submitApproval = submitApproval;
+    window.viewPDF = viewPDF;
+    window.closePDFViewer = closePDFViewer;
+
+    // Handle modal close on overlay click
+    document.addEventListener('click', function(e) {
+        const pdfModal = document.getElementById('pdfModal');
+        if (e.target === pdfModal) {
+            closePDFViewer();
+        }
+    });
+
+    // Add keyboard event listener for modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const pdfModal = document.getElementById('pdfModal');
+            if (pdfModal && pdfModal.style.display === 'block') {
+                closePDFViewer();
+            }
+        }
+    });
+});
+    </script>
+
+</body>
+</html>

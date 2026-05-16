@@ -1,0 +1,1110 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAO Test Approval</title>
+    {% include 'includes/rmtr_test_modal_js.html' %}
+    <style>
+        /* Base Styles */
+body {
+    font-family: 'Inter', Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+/* Container and Header Styles */
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.header {
+    background-color: #CC1C24;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #0B5394;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #fff;
+}
+
+.header a {
+    color: white;
+    text-decoration: none;
+}
+
+.header a:hover {
+    color: #e6e6e6;
+    text-decoration: none;
+}
+
+/* Report Details Section */
+.report-details {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.report-details h4 {
+    margin: 0 0 10px 0;
+    color: #3A6D8C;
+    font-size: 16px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+
+.report-details table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 0;
+}
+
+.report-details th,
+.report-details td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: middle;
+    line-height: 1.3;
+}
+
+.report-details th {
+    background-color: #f4f4f4;
+    width: 200px;
+    font-weight: bold;
+    color: #444;
+
+}
+
+.report-details td {
+    background-color: #ffffff;
+}
+
+/* Test Image Styles */
+.test-image {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    object-fit: cover;
+    border-radius: 4px;
+    transition: transform 0.3s ease;
+}
+
+.test-image:hover {
+    transform: scale(1.1);
+}
+
+/* Approval Section */
+.approval-section {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+}
+
+.approval-section h4 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #3A6D8C;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 100px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.form-group textarea:focus {
+    border-color: #3A6D8C;
+    outline: none;
+    box-shadow: 0 0 5px rgba(58, 109, 140, 0.2);
+}
+
+/* Button Styles */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.button-container button {
+    padding: 12px 24px;
+    font-size: 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 1rem;
+}
+
+.button-group button {
+    padding: 12px 24px;
+    font-size: 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.approved:hover {
+    background-color: #218838;
+}
+
+.rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.rejected:hover {
+    background-color: #c82333;
+}
+
+.retest {
+    background-color: #007BFF;
+    color: white;
+}
+
+.retest:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .button-group button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+.approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.approved:hover {
+    background-color: #218838;
+}
+
+.rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.rejected:hover {
+    background-color: #c82333;
+}
+
+.retest {
+    background-color: #007BFF;
+    color: white;
+}
+
+.retest:hover {
+    background-color: #0056b3;
+}
+
+.cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.cancel:hover {
+    background-color: #5a6268;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Test Results Modal Button */
+.test-results-modal-btn {
+    background-color: #3A6D8C;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.test-results-modal-btn:hover {
+    background-color: #2c5269;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.modal-header {
+    background-color: #3A6D8C;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.modal-close {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #ddd;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Test Results Styles */
+.test-entry {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.test-entry h4 {
+    color: #3A6D8C;
+    margin: 0 0 15px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.test-entry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.test-entry-item {
+    background-color: white;
+    padding: 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.test-entry-item strong {
+    display: block;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3A6D8C;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Image Zoom */
+.zoomed {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    max-height: 80vh;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .button-container {
+        flex-direction: column;
+    }
+    
+    .button-container button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .test-entry-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .report-details th,
+    .report-details td {
+        padding: 6px;
+        font-size: 13px;
+    }
+    
+    .report-details th {
+        width: 35%;
+    }
+
+    .report-details {
+        padding: 10px;
+    }
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+a:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+   
+</style>
+
+<body>
+    
+    <div class="container">
+        <div class="header">
+            <h3><a href="{% url 'dashboard' %}">Raw Materials Test Report - {{ page_title }}</a></h3>
+        </div>
+    
+        <div class="report-details">
+            <h4>RMTR Report Details</h4>
+            <table>
+                <tbody>
+                    <tr>
+                        <th><strong>RMTR NO:</strong></th>
+                        <td>{{ report.rmtr_no }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date:</th>
+                        <td>{{ report.date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Supplier:</th>
+                        <td>{{ report.supplier }}</td>
+                    </tr>
+                    <tr>
+                        <th>Material Type:</th>
+                        <td>{{ report.material_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Sub Category:</th>
+                        <td>{{ report.sub_category }}</td>
+                    </tr>
+                    <tr>
+                        <th>UOM:</th>
+                        <td>{{ report.uom }}</td>
+                    </tr>
+                    <tr>
+                        <th>Quantity:</th>
+                        <td>{{ report.quantity }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tests:</th>
+                        <td>{{ report.tests }}</td>
+                    </tr>
+                    <tr>
+                        <th>Plant:</th>
+                        <td>{{ report.plant }}</td>
+                    </tr>
+                    <tr>
+                        <th>Approved Mgt:</th>
+                        <td>{{ report.approved_mgt }}</td>
+                    </tr>
+                    <tr>
+                        <th>Requested By:</th>
+                        <td>{{ report.requested_by }}</td>
+                    </tr>
+                    <tr>
+                        <th>Specs:</th>
+                        <td>{{ report.specs }}</td>
+                    </tr>
+                    <tr>
+                        <th>Justification:</th>
+                        <td>{{ report.justification }}</td>
+                    </tr>
+                    <tr>
+                        <th>Factory Manager comments:</th>
+                        <td>{{ report.fm_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th>HOD Comments:</th>
+                        <td>{{ report.hod_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th>Lab QC Comments:</th>
+                        <td>{{ report.lab_qc_comments }}</td>
+                    </tr>
+                    <tr>
+                        <th>QAO Test Comments:</th>
+                        
+                        <td>{{ report.qao_comments }}</td>
+                    </tr>
+                    
+                    <tr>
+                        <th>HOD Test Request</th>
+                        <td>                      
+                                {{ report.hod_test_comments }}                           
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Image:</th>
+                        <td>
+                            {% if report.test_image %}
+                            <img src="{{ report.test_image.url }}" 
+                                 alt="Test Image"
+                                 class="test-image" 
+                                 onclick="toggleZoom(this)">
+                            {% else %}
+                            No image available
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Tests Results:</th>
+                        <td>
+                            {{ report.raw_material_results }}
+                            <button type="button" 
+                                    class="btn btn-info test-results-modal-btn"
+                                    onclick="RMTR.showTestDetails('{{ report.id }}', '{{ report.rmtr_no }}')">
+                                View All Test Results
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+        <!-- Approval Section -->
+        <div class="approval-section mt-4">
+            <h4>{{ page_title }}</h4>
+            {% if report.is_rejected %}
+                <div class="alert alert-danger">
+                    <strong>This report has been REJECTED and terminated.</strong><br>
+                    Rejected by: {{ report.rejected_by }}<br>
+                    Rejection Stage: {{ report.rejection_stage }}<br>
+                    Rejection Date: {{ report.rejection_date|date:"Y-m-d H:i" }}<br>
+                    Rejection Comments: {{ report.rejection_comments }}
+                </div>
+            {% endif %}
+    
+            <form id="approvalForm" method="POST" {% if report.is_rejected %}class="disabled"{% endif %}>
+                {% csrf_token %}
+                <input type="hidden" name="rmtr_no" value="{{ report.rmtr_no }}">
+                
+                <div class="form-group">
+                    <label for="comments">Comments:</label>
+                    <textarea id="comments" 
+                             name="comments" 
+                             rows="4" 
+                             class="form-control"
+                             required>{{ report.fm_test_comments }}</textarea>
+                    
+                </div>
+    
+                <div class="button-group mt-3">
+                    <!-- Approve Button -->
+                    <button type="button" 
+                            onclick="RMTR.submitApproval('approved')"
+                            class="approved"
+                            {% if report.fm_test_approved or report.is_rejected %}disabled{% endif %}>
+                        Approve
+                    </button>
+                
+                    
+                    <button type="button" 
+                            onclick="RMTR.showRetestModal()"
+                            class="retest"
+                            {% if report.retest_requested or report.is_rejected %}disabled{% endif %}>
+                        Request Retest
+                    </button>
+                
+                    <button type="button" 
+                            onclick="RMTR.submitApproval('rejected')"
+                            class="rejected"
+                            {% if report.fm_test_approved or report.is_rejected %}disabled{% endif %}>
+                        Reject
+                    
+                </div>
+            </form>
+        </div>
+    
+        <!-- Test Results Modal -->
+        <div id="testResultsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Test Results</h3>
+                    <span class="modal-close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="testResultsContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="RMTR.closeModal('testResultsModal')">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Retest Modal -->
+        <div id="retestModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Request Retest</h3>
+                    <span class="modal-close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="retestForm">
+                        <div class="form-group">
+                            <label for="retest_reason">Reason for Retest:</label>
+                            <textarea id="retest_reason" 
+                                     name="retest_reason" 
+                                     rows="4" 
+                                     class="form-control"
+                                     required></textarea>
+                            <div class="invalid-feedback">Please provide a reason for retest</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="RMTR.closeRetestModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="RMTR.submitRetest()">
+                        Submit Retest
+                    </button>
+                </div>
+            </div>
+        </div>
+    
+          <!--Loading Spinner -->
+
+        <div id="loadingSpinner">
+            <div class="spinner"></div>
+        </div>
+    </div>
+<script>
+ // RMTR System with fixed modal and spinner functionality
+const RMTR = {
+    config: {
+        timeouts: {
+            redirect: 1500,
+            messageDisplay: 3000,
+            maxRetries: 3
+        }
+    },
+
+    utils: {
+        showLoading() {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                spinner.style.display = 'flex';
+            } else {
+                console.warn('Loading spinner element not found');
+            }
+        },
+
+        hideLoading() {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+        },
+
+        showMessage(message, isError = false) {
+            // First try to show message in a toast/notification if available
+            const notificationElement = document.getElementById('notification');
+            if (notificationElement) {
+                notificationElement.textContent = message;
+                notificationElement.className = `notification ${isError ? 'error' : 'success'}`;
+                notificationElement.style.display = 'block';
+
+                setTimeout(() => {
+                    notificationElement.style.display = 'none';
+                }, this.config?.timeouts?.messageDisplay || 3000);
+            } else {
+                // Fallback to alert
+                alert(message);
+            }
+            
+            if (isError) {
+                console.error('RMTR Error:', message);
+            }
+        },
+
+        validateForm(formId) {
+            const form = document.getElementById(formId);
+            if (!form) {
+                console.error(`Form with ID "${formId}" not found`);
+                return false;
+            }
+
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            return isValid;
+        },
+
+        escapeHtml(unsafe) {
+            return unsafe
+                 ? unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;")
+                 : '';
+        },
+
+        async fetchWithRetry(url, options) {
+            const maxRetries = 3;
+            let lastError;
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response;
+                } catch (error) {
+                    lastError = error;
+                    if (i === maxRetries - 1) break;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+                }
+            }
+            throw lastError;
+        }
+    },
+
+    modals: {
+        show(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) {
+                console.error(`Modal with ID "${modalId}" not found`);
+                return;
+            }
+            modal.style.display = 'block';
+            modal.classList.add('show');
+        },
+
+        close(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            
+            const form = modal.querySelector('form');
+            if (form) {
+                form.reset();
+                form.querySelectorAll('.is-invalid').forEach(field => {
+                    field.classList.remove('is-invalid');
+                });
+            }
+        },
+
+        init() {
+            // Close modal when clicking outside
+            window.onclick = (event) => {
+                if (event.target.classList.contains('modal')) {
+                    this.close(event.target.id);
+                }
+            };
+
+            // Initialize close buttons
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.onclick = (e) => {
+                    const modal = e.target.closest('.modal');
+                    if (modal) this.close(modal.id);
+                };
+            });
+        }
+    },
+
+    async submitApproval(status) {
+        try {
+            const comments = document.getElementById('comments');
+            if (!comments || !comments.value.trim()) {
+                this.utils.showMessage('Please provide comments', true);
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to ${status} this request?`)) {
+                return;
+            }
+
+            this.utils.showLoading();
+            const form = document.getElementById('approvalForm');
+            if (!form) throw new Error('Approval form not found');
+
+            const formData = new FormData(form);
+            formData.append('approval_status', status);
+
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Submission failed');
+            }
+
+            this.utils.showMessage(data.message || `Request ${status} successfully`);
+            setTimeout(() => {
+                window.location.href = data.redirect_url || '/pending/';
+            }, 1500);
+
+        } catch (error) {
+            this.utils.showMessage(error.message, true);
+        } finally {
+            this.utils.hideLoading();
+        }
+    },
+
+    showRetestModal() {
+        if (!this.utils.validateForm('approvalForm')) {
+            this.utils.showMessage('Please fill in all required fields before requesting a retest', true);
+            return;
+        }
+        this.modals.show('retestModal');
+    },
+
+    closeRetestModal() {
+        this.modals.close('retestModal');
+    },
+
+    async submitRetest() {
+        try {
+            const comments = document.getElementById('comments');
+            const retestReason = document.getElementById('retest_reason');
+            
+            if (!comments || !comments.value.trim() || !retestReason || !retestReason.value.trim()) {
+                this.utils.showMessage('Please fill all required fields', true);
+                return;
+            }
+
+            if (!confirm('Are you sure you want to request a retest?')) {
+                return;
+            }
+
+            this.utils.showLoading();
+            const form = document.getElementById('approvalForm');
+            if (!form) throw new Error('Approval form not found');
+
+            const rmtrNo = form.querySelector('input[name="rmtr_no"]').value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const formData = new FormData();
+            formData.append('retest_reason', retestReason.value.trim());
+            formData.append('comments', comments.value.trim());
+            formData.append('csrfmiddlewaretoken', csrfToken);
+
+            const response = await fetch(`/retest_request/${rmtrNo}/`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Retest request failed');
+            }
+
+            this.modals.close('retestModal');
+            this.utils.showMessage(data.message || 'Retest request submitted successfully');
+            setTimeout(() => {
+                window.location.href = data.redirect_url || '/pending/';
+            }, 1500);
+
+        } catch (error) {
+            this.utils.showMessage(error.message, true);
+        } finally {
+            this.utils.hideLoading();
+        }
+    },
+
+    async showTestDetails(rmtrId, rmtrNo) {
+        try {
+            this.utils.showLoading();
+            console.log(`Loading test details for RMTR ID: ${rmtrId}, RMTR No: ${rmtrNo}`);
+
+            // Prefer a global URL template defined by the shared include (if present).
+            // Fall back to the local Django-reversed template so this page still works standalone.
+            const urlTemplate = window.RMTR_TESTS_URL_TEMPLATE || window.IMP_RMTR_TESTS_URL_TEMPLATE || "{% url 'get_rmtr_tests' '__RMTR_NO__' %}";
+            const url = urlTemplate.replace('__RMTR_NO__', encodeURIComponent(rmtrNo));
+            console.log(`Fetching test data from: ${url}`);
+            
+            const response = await this.utils.fetchWithRetry(url);
+            console.log(`Response status: ${response.status}, ok: ${response.ok}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Test data received:', data);
+            
+            this.displayTestResults(rmtrNo, data);
+        } catch (error) {
+            console.error('Error loading test details:', error);
+            this.utils.showMessage(`Failed to load test details: ${error.message}`, true);
+        } finally {
+            this.utils.hideLoading();
+        }
+    },
+
+    displayTestResults(rmtrNo, data) {
+        const container = document.getElementById('testResultsContainer');
+        if (!container) {
+            this.utils.showMessage('Test results container not found', true);
+            return;
+        }
+
+        let html = `<h2>Test Results for RMTR ${rmtrNo}</h2>`;
+
+        if (!data || Object.keys(data).length === 0) {
+            html += '<p>No test data available</p>';
+        } else {
+            // Support both newer API shape (tests_list) and legacy numbered fields.
+            const testsList = Array.isArray(data.tests_list) ? data.tests_list : null;
+            if (testsList && testsList.length) {
+                testsList.forEach((t, idx) => {
+                    const n = idx + 1;
+                    const testName = this.utils.escapeHtml(t.test || t.tests_carried_out || '');
+                    const sampleResults = this.utils.escapeHtml(t.sample_results || '');
+                    const rawMaterialResults = this.utils.escapeHtml(t.raw_material_results || '');
+                    const standards = this.utils.escapeHtml(t.kapa_standards || t.standards || '');
+
+                    if (!testName && !sampleResults && !rawMaterialResults && !standards) return;
+
+                    html += `
+                        <div class="test-entry card mb-3">
+                            <div class="card-header">
+                                <h4>Test ${n}</h4>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Test:</strong> ${testName}</p>
+                                <p><strong>Sample Results:</strong> ${sampleResults}</p>
+                                <p><strong>Raw Material Results:</strong> ${rawMaterialResults}</p>
+                                <p><strong>Standards:</strong> ${standards}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                for (let i = 1; i <= 16; i++) {
+                    if (data[`tests_carried_out${i}`]) {
+                        html += `
+                            <div class="test-entry card mb-3">
+                                <div class="card-header">
+                                    <h4>Test ${i}</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Test:</strong> ${this.utils.escapeHtml(data[`tests_carried_out${i}`])}</p>
+                                    <p><strong>Sample Results:</strong> ${this.utils.escapeHtml(data[`sample_results${i}`])}</p>
+                                    <p><strong>Raw Material Results:</strong> ${this.utils.escapeHtml(data[`raw_material_results${i}`])}</p>
+                                    <p><strong>Standards:</strong> ${this.utils.escapeHtml(data[`kapa_standards${i}`])}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+        }
+
+        container.innerHTML = html;
+        this.modals.show('testResultsModal');
+    },
+
+    init() {
+        // Initialize modals
+        this.modals.init();
+
+        // Initialize form validation
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                if (!this.utils.validateForm(form.id)) {
+                    e.preventDefault();
+                    this.utils.showMessage('Please fill in all required fields', true);
+                }
+            });
+        });
+
+        // Initialize form fields validation
+        document.querySelectorAll('[required]').forEach(field => {
+            field.addEventListener('input', () => {
+                if (field.value.trim()) {
+                    field.classList.remove('is-invalid');
+                }
+            });
+        });
+
+        console.log('RMTR System initialized successfully');
+    }
+};
+
+// Initialize RMTR system when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    RMTR.init();
+});
+</script>
+    </body>
+    </html>        

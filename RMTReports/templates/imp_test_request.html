@@ -1,0 +1,1636 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapa Oil Refineries Test Report</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <style>
+       
+    /* CSS Variables for consistent theming */
+:root {
+    /* Colors */
+    --primary-color: #3A6D8C;
+    --primary-dark: #2C5571;
+    --secondary-color: #007bff;
+    --text-primary: #2c3e50;
+    --text-secondary: #6c757d;
+    --background-main: #f4f4f9;
+    --background-light: #ffffff;
+    --border-color: #e0e0e0;
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    
+    /* Border Radius */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-main);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: var(--spacing-md);
+    min-height: 100vh;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+/* Main Container */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+    width: 100%;
+}
+
+/* Header Component */
+.header {
+    background-color: #CC1C24;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--spacing-lg);
+    position: relative;
+}
+
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #0B5394;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+.header h1 {
+    font-size: 2rem;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.header h3 {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Form Container */
+.form-container {
+    background: linear-gradient(to bottom right, var(--background-light), #f8f9fa);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-lg);
+    margin: 0 auto var(--spacing-lg);
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Grid Layout System */
+.grid {
+    display: grid;
+    gap: var(--spacing-md);
+    width: 100%;
+}
+
+.two-column {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Section Layout */
+.section {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--background-light);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.section-header {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Flex Utilities */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-md {
+    gap: var(--spacing-md);
+}
+
+/* Links */
+a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+a:hover {
+    opacity: 0.9;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        padding: var(--spacing-sm);
+    }
+    
+    .form-container {
+        margin: 0 var(--spacing-sm);
+    }
+}
+
+@media (max-width: 768px) {
+    .two-column {
+        grid-template-columns: 1fr;
+    }
+    
+    .header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .form-container {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --spacing-lg: 1.5rem;
+        --spacing-md: 1rem;
+        --spacing-sm: 0.75rem;
+    }
+    
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.25rem; }
+}
+
+/* Print Styles */
+@media print {
+    .form-container {
+        box-shadow: none;
+        margin: 0;
+    }
+    
+    .header {
+        background: none;
+        color: black;
+        box-shadow: none;
+    }
+    
+    .header h1,
+    .header h3 {
+        color: black;
+        text-shadow: none;
+    }
+}
+
+/* Label Styles */
+.form-container label,
+.option-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    display: block;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+/* Common Input Styles */
+.form-container input[type="text"],
+.form-container input[type="date"],
+.form-container input[type="number"],
+.form-container select,
+.form-container textarea,
+.two-column input[type="text"],
+.two-column input[type="date"],
+.two-column input[type="number"],
+.two-column select,
+.two-column textarea {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #2c3e50;
+    background: linear-gradient(to bottom, #ffffff, #fafafa);
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Select Element Specific Styles */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 36px;
+    cursor: pointer;
+    height: 45px;
+}
+
+/* Textarea Specific Styles */
+textarea {
+    min-height: 100px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* Focus and Hover States */
+.form-container input:hover,
+.form-container select:hover,
+.form-container textarea:hover,
+.select2-container--default .select2-selection--single:hover {
+    border-color: #3A6D8C;
+    box-shadow: 0 4px 8px rgba(58, 109, 140, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-container input:focus,
+.form-container select:focus,
+.form-container textarea:focus,
+.select2-container--default .select2-selection--single:focus {
+    border-color: #3A6D8C;
+    box-shadow: 0 0 0 3px rgba(58, 109, 140, 0.1);
+    outline: none;
+    background: #ffffff;
+}
+
+/* File Upload Styles */
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.image-upload-button,
+.file-upload-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 2px dashed #e0e0e0;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-upload-button:hover,
+.file-upload-button:hover {
+    border-color: #3A6D8C;
+    background-color: #f0f4f7;
+}
+
+/* Placeholder Styles */
+::placeholder {
+    color: #a0aec0;
+    opacity: 1;
+}
+
+:-ms-input-placeholder {
+    color: #a0aec0;
+}
+
+::-ms-input-placeholder {
+    color: #a0aec0;
+}
+
+/* Firefox specific styles */
+@-moz-document url-prefix() {
+    select {
+        text-indent: 0.01px;
+        text-overflow: '';
+    }
+}
+
+/* Disabled States */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #f8f9fa;
+    border-color: #e0e0e0;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Error States */
+.form-container input.error,
+.form-container select.error,
+.form-container textarea.error {
+    border-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.form-container input.error:focus,
+.form-container select.error:focus,
+.form-container textarea.error:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Button Base Styles */
+.form-container button,
+.submit-button {
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    border: none;
+    color: black;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-container button:hover,
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+    color: white;
+}
+
+.form-container button:active,
+.submit-button:active {
+    transform: translateY(0);
+}
+
+/* Submit Button */
+#submit-form-button {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 1.5rem;
+    padding: 14px 28px;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 24px;
+}
+
+#submit-form-button:hover {
+    background: #0056b3;
+    color: white;
+}
+
+/* Cancel Button */
+.cancel-button {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    padding: 8px 12px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 50%;
+    max-width: 600px;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2c3e50;
+}
+
+.close-button {
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover {
+    color: #343a40;
+}
+
+/* Loading Indicator */
+#loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    color: #3A6D8C;
+    margin-left: 1rem;
+}
+
+#loading-indicator::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    border: 2px solid #3A6D8C;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Message and Error Styles */
+.message, 
+.error {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.message {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Accessibility Focus Styles */
+:focus {
+    outline: 3px solid rgba(58, 109, 140, 0.5);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* Select2 Styles */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single {
+    height: 45px !important;
+    padding: 5px !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    background: linear-gradient(to bottom, #ffffff, #fafafa);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 35px !important;
+    padding-left: 16px !important;
+    color: #2c3e50 !important;
+    font-size: 1rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 43px !important;
+    right: 8px !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #3A6D8C transparent transparent transparent !important;
+    border-width: 6px 6px 0 6px !important;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparent #3A6D8C transparent !important;
+    border-width: 0 6px 6px 6px !important;
+}
+
+.select2-dropdown {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.select2-search__field {
+    padding: 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.select2-results__option {
+    padding: 10px 16px !important;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #0B5394 !important;
+    color: white !important;
+}
+
+/* Preview Container Styles */
+.preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background-color: white;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.preview-item .remove-file {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.preview-item .remove-file:hover {
+    background-color: rgba(255, 0, 0, 0.9);
+}
+
+/* PDF Preview Styles */
+.pdf-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.pdf-icon {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* File Information Styles */
+.file-name {
+    font-size: 10px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px;
+    margin-top: 5px;
+}
+
+.file-size {
+    font-size: 10px;
+    color: #666;
+    text-align: center;
+    margin-top: 2px;
+}
+
+/* Tests Container Styles */
+#tests-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 1rem 0;
+}
+
+#tests-container label {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 0.3rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+#tests-container label:hover {
+    background-color: #f8f9fa;
+    border-color: #3A6D8C;
+}
+
+#tests-container input[type="checkbox"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+}
+
+/* Approver Selection Styles */
+.approver-selection {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Hidden Elements */
+.hidden {
+    display: none;
+}
+
+/* Form Section Headers */
+.form-section-header {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+/* Selected Tests List */
+#selected-tests-list {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    border: 1px solid #e0e0e0;
+    line-height: 1.6;
+}
+        
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><a href="{% url 'dashboard' %}">Kapa Oil Refineries Ltd</a></h1>
+            <h3><a href="{% url 'dashboard' %}">Imported Raw Material Test Report</a></h3>
+        </div>
+    
+        <div class="form-container">
+            <form id="test-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- IMP RMTR No and Date -->
+                <div class="two-column">
+                    <div>
+                        <label for="imp-rmtr-no">IMP RMTR NO:</label>
+                        <input type="text" id="imp-rmtr-no" name="imp_rmtr_no" value="{{ imp_rmtr_no }}" readonly>
+                    </div>
+                    <div>
+                        <label for="date">Date:</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                </div>
+    
+                <!-- Supplier Selection -->
+                <div class="two-column">
+                    <div>
+                        <label for="material-name">Material Name:</label>
+                        <input type="text" id="material-name" name="material_name" required>
+                    </div>
+                    <div>
+                        <label for="supplier">Supplier:</label>
+                        <select id="supplier" name="supplier" required>
+                            <option value="" disabled selected>Select a supplier</option>
+                        </select>
+                        <button type="button" onclick="toggleAddSupplierForm()">Add Supplier</button>
+                    </div>
+                </div>
+                
+                <!-- Add Supplier Form -->
+                <div id="add-supplier-form" style="display:none;">
+                    <h4>Add New Supplier</h4>
+    
+                    <label for="new-supplier-name">Supplier Name:</label>
+                    <input type="text" id="new-supplier-name" name="new-supplier-name">
+    
+                    <button type="button" id="add-supplier-button">Create New Supplier</button>
+                </div>
+    
+                <div>
+                    <label for="material-type">Material Type:</label>
+                    <select id="material-type" name="material_type" required>
+                        <option value="">--Select Material Type--</option>
+                        <option value="food">Food Raw Materials</option>
+                        <option value="non-food">Non Food Raw Materials</option>
+                        <option value="packaging">Packaging Material</option>
+                    </select>
+                
+                    <!-- Sub-categories -->
+                    <div id="sub-category-section" class="hidden">
+                        <label for="sub-category">Select Sub-Category:</label>
+                        <select id="sub-category" name="sub_category" required></select>
+                    </div>
+                
+                    <!-- Tests carried out (shown after modal selection) -->
+                    <div id="tests-section" class="hidden">
+                        <h3>Selected Tests:</h3>
+                        <div id="selected-tests-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Modal for Test Selection -->
+                <div id="testsModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Select Tests</h2>
+                            <span class="close-button">&times;</span>
+                        </div>
+                        <div id="tests-container"></div>
+                        <div class="modal-actions">
+                            <button id="submit-modal" class="submit-button">Select</button>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- UOM and Quantity -->
+                <div class="two-column">
+                    <div class="column">
+                        <label for="uom">UOM:</label>
+                        <select id="uom" name="uom" required>
+                            <option value="" disabled selected>Select UOM</option>
+                            <option value="kgs">Kgs</option>
+                            <option value="ltrs">Ltrs</option>
+                            <option value="pcs">Pcs</option>
+                            <option value="tonnes">Tonnes</option>
+                            <option value="litres">Litres</option>
+                            <option value="millilitres">Millilitres</option>
+                            <option value="grams">Grams</option>
+                            <option value="units">Units</option>
+                        </select>
+                    </div>
+                    <div class="column">
+                        <label for="quantity">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" required>
+                    </div>
+                </div>
+    
+                <!-- Specs and Image Upload -->
+                <div class="two-column">
+                    <div>
+                        <label for="specs">SPECS:</label>
+                        <input type="text" id="specs" name="specs" required>
+                    </div>
+                    
+                </div>
+
+                <div class="two-column">
+                    <div>
+                        <label for="image-upload">Images Upload </label>
+                        <input type="file" id="image-upload" name="image-upload[]" 
+                               class="image-upload-button" multiple 
+                               accept="image/*" onchange="previewFiles('image')">
+                        <div id="imagePreviewContainer" class="preview-container"></div>
+                    </div>
+                    <div>
+                        <label for="pdf-upload">PDF Documents</label>
+                        <input type="file" id="pdf-upload" name="pdf-upload[]" 
+                               class="file-upload-button" multiple 
+                               accept=".pdf,application/pdf" onchange="previewFiles('pdf')">
+                        <div id="pdfPreviewContainer" class="preview-container"></div>
+                    </div>
+                </div>
+    
+                <!-- Department and HOD -->
+                <div class="two-column">
+                    <div>
+                        <label for="plant">Department:</label>
+                        <select id="plant" name="plant" required>
+                            <option value="" disabled selected>Select a Department</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="hod">Head of Department:</label>
+                        <input id="hod" name="hod" type="text" readonly />
+                    </div>
+                </div>           
+    
+                <!-- Justification -->
+                <div>
+                    <label for="justification">Justification:</label>
+                    <textarea data-grammarly-disable="true" id="justification" name="justification" rows="4" required></textarea>
+                </div>
+    
+                <!-- Requested By and Approved Mgt -->
+                <div class="two-column">
+                    <div>
+                        <label for="requested-by">Requested By:</label>
+                        <input type="text" id="requested-by" name="requested-by">
+                    </div>
+                </div>
+    <!--
+                <div class="two-column">
+                    <div>
+                        <label for="approved-mgt">First Approver:</label>
+                        <select id="approved-mgt" name="approved-mgt" required onchange="showSecondApprover(this.value)">
+                            <option value="" disabled selected>Select an approver</option>
+                            <option value="jaivin">Jaivin</option>
+                            <option value="milan">Milan</option>
+                            <option value="neev">Neev</option>
+                            <option value="sid">Sid</option>
+                        </select>
+                    </div>
+                    
+                  
+                    <div id="second-approver-container" style="display: none;">
+                        <label for="second-approver">Second Approver:</label>
+                        <div class="approver-selection">
+                            <select id="second-approver" name="second-approver">
+                                <option value="" disabled selected>Select an approver</option>
+                                <option value="jaivin">Jaivin</option>
+                                <option value="milan">Milan</option>
+                                <option value="neev">Neev</option>
+                                <option value="sid">Sid</option>
+                            </select>
+                            <button type="button" onclick="cancelSecondApprover()" class="cancel-button">Cancel</button>
+                        </div>
+                    </div>-->
+                
+                    <!-- Hidden input to store combined approvers -->
+                    <input type="hidden" id="combined-approvers" name="approved-mgt">
+
+                    <!-- Submit Button -->
+                <div>
+                    {{ form.as_p }}
+                    <button type="submit" id="submit-form-button">Submit</button>
+                    <div id="form-error" style="color: red; display: none;"></div>
+                    <div id="form-message" style="color: green; display: none;"></div>
+                    <div id="loading-indicator" style="display: none;">Loading...</div>
+                </div>
+                </div>
+    
+                
+            </form>
+        </div>
+    </div>
+<script>
+       
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('test-form');
+        const submitFormButton = document.getElementById('submit-form-button');
+        const addSupplierButton = document.getElementById('add-supplier-button');
+    
+        // Handle full form submission
+        form.addEventListener('submit', handleFormSubmission);
+    
+        // Handle supplier creation independently
+        addSupplierButton.addEventListener('click', addSupplier);
+    
+        // Fetch RMTR number when the DOM is fully loaded
+        fetch('/generate-imp-rmtr-number/')
+        .then(response => response.json())
+        .then(data => {
+            const impRmtrNoInput = document.getElementById('imp-rmtr-no');
+            if (impRmtrNoInput && data.imp_rmtr_number) {
+                impRmtrNoInput.value = data.imp_rmtr_number;
+                console.log('Generated IMP RMTR No:', data.imp_rmtr_number);
+            }
+        })
+        .catch(error => console.error('Error fetching IMP RMTR number:', error));
+});
+    
+      // Get the current date
+      const currentDate = new Date();
+    
+      // Format it as YYYY-MM-DD (the format required for <input type="date">)
+      const formattedDate = currentDate.toISOString().split('T')[0]; // Get date part (YYYY-MM-DD)
+    
+      // Set the value of the date input to the current date
+      const dateInput = document.getElementById('date');
+      dateInput.value = formattedDate;
+      dateInput.disabled = true; 
+          
+        document.addEventListener('DOMContentLoaded', function() {
+            const plantSelect = document.getElementById('plant');
+            const hodInput = document.getElementById('hod');
+        
+            // Fetch plant and HOD data from the backend
+            fetch('/get-plant-hod-data/')
+                .then(response => response.json())
+                .then(data => {
+                    // Populate the department dropdown dynamically
+                    data.forEach(plant => {
+                        const option = document.createElement('option');
+                        option.value = plant.id;  // Use the plant ID for value
+                        option.text = plant.name;
+                        plantSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching plant HOD data:', error));
+        
+            // Update HOD field when a department is selected
+            plantSelect.addEventListener('change', function() {
+                const selectedPlant = plantSelect.options[plantSelect.selectedIndex];
+                const selectedPlantId = selectedPlant.value;
+        
+                // Fetch the HOD based on the selected department
+                fetch('/get-plant-hod-data/')
+                    .then(response => response.json())
+                    .then(data => {
+                        const plant = data.find(p => p.id == selectedPlantId);
+                        if (plant) {
+                            hodInput.value = plant.hod;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching HOD:', error));
+            });
+        });
+    
+    
+    
+    
+    // DOM elements
+    const materialTypeSelect = document.getElementById('material-type');
+    const subCategorySelect = document.getElementById('sub-category');
+    const subCategorySection = document.getElementById('sub-category-section');
+    const testsModal = document.getElementById('testsModal');
+    const testsContainer = document.getElementById('tests-container');
+    const testsSection = document.getElementById('tests-section');
+    const selectedTestsList = document.getElementById('selected-tests-list');
+    const submitModalButton = document.getElementById('submit-modal');
+    let selectedTests = [];
+    
+    // Object to store materials, subcategories, and tests fetched from the backend
+    let materialSubCategories = {};
+    
+    // Fetch materials, subcategories, and tests from the Django backend
+    function fetchMaterialData() {
+        fetch('/fetch-material-data/')
+            .then(response => response.json())
+            .then(data => {
+                materialSubCategories = {};
+                data.materials.forEach(material => {
+                    materialSubCategories[material.material] = {};
+                    material.subcategories.forEach(subcategory => {
+                        materialSubCategories[material.material][subcategory.name] = subcategory.tests;
+                    });
+                });
+                populateMaterialTypes();  // Populate the material types after data is fetched
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+    
+    // Populate the material type dropdown
+    function populateMaterialTypes() {
+        materialTypeSelect.innerHTML = ''; // Clear previous options
+        materialTypeSelect.appendChild(new Option('--Select Material Type--', ''));
+        Object.keys(materialSubCategories).forEach(material => {
+            const option = document.createElement('option');
+            option.value = material;
+            option.textContent = material;
+            materialTypeSelect.appendChild(option);
+        });
+    }
+    
+    // Event listener for material type dropdown
+    materialTypeSelect.addEventListener('change', function () {
+        const selectedMaterialType = materialTypeSelect.value;
+        if (selectedMaterialType) {
+            populateSubCategories(selectedMaterialType);
+            subCategorySection.classList.remove('hidden');
+            testsSection.classList.add('hidden');
+        } else {
+            subCategorySection.classList.add('hidden');
+            testsSection.classList.add('hidden');
+        }
+    });
+    
+    // Populate sub-categories based on selected material type
+    function populateSubCategories(materialType) {
+        subCategorySelect.innerHTML = ''; // Clear previous options
+        subCategorySelect.appendChild(new Option('--Select Sub-Category--', ''));
+        const subCategories = Object.keys(materialSubCategories[materialType] || {});
+        subCategories.forEach(subCategory => {
+            const option = document.createElement('option');
+            option.value = subCategory;
+            option.textContent = subCategory;
+            subCategorySelect.appendChild(option);
+        });
+    }
+    
+    // Event listener for sub-category dropdown
+    subCategorySelect.addEventListener('change', function () {
+        const selectedMaterialType = materialTypeSelect.value;
+        const selectedSubCategory = subCategorySelect.value;
+        if (selectedSubCategory) {
+            openModal(selectedMaterialType, selectedSubCategory);
+        }
+    });
+    
+    // Open modal with tests for the selected sub-category
+    function openModal(materialType, subCategory) {
+        testsContainer.innerHTML = '';  // Clear previous tests
+        selectedTests = [];
+        const tests = materialSubCategories[materialType]?.[subCategory] || [];
+    
+        tests.forEach(test => {
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = test;
+            checkbox.checked =true;
+            selectedTests.push(test);
+    
+    
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(test));
+            testsContainer.appendChild(label);
+        });
+    
+        // Show modal
+        testsModal.style.display = 'block';
+    }
+    
+    // Close modal and save selected tests
+    submitModalButton.addEventListener('click', saveAndCloseModal);
+    document.querySelector('.close-button').addEventListener('click', saveAndCloseModal);
+    
+    function saveAndCloseModal() {
+        // Gather selected tests
+        const checkboxes = testsContainer.querySelectorAll('input[type="checkbox"]:checked');
+        selectedTests = Array.from(checkboxes).map(checkbox => checkbox.value);
+    
+        // Display selected tests
+        selectedTestsList.innerHTML = selectedTests.length > 0 ? selectedTests.join(', ') : 'No tests selected';
+        testsSection.classList.remove('hidden');
+    
+        // Create a hidden field to send selected tests
+        let testsInput = document.getElementById('selected-tests-input');
+        if (!testsInput) {
+            testsInput = document.createElement('input');
+            testsInput.type = 'hidden';
+            testsInput.name = 'selected_tests'; // This is the name the backend will recognize
+            testsInput.id = 'selected-tests-input';
+            document.forms[0].appendChild(testsInput); // Assuming the form is the first one on the page
+        }
+        testsInput.value = selectedTests.join(', '); // Join selected tests into a string
+    
+        // Close modal
+        testsModal.style.display = 'none';
+    }
+    
+    // Close modal if clicking outside of it
+    window.onclick = function(event) {
+        if (event.target === testsModal) {
+            saveAndCloseModal();
+        }
+    };
+    
+    // Call fetchMaterialData() to load the material, subcategories, and tests from the backend when the page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchMaterialData();
+    });
+    
+    
+    
+    
+    /*
+    function showSecondApprover(firstApproverValue) {
+        const secondApproverContainer = document.getElementById('second-approver-container');
+        const secondApproverSelect = document.getElementById('second-approver');
+        const combinedApproversInput = document.getElementById('combined-approvers');
+        
+        // Show the second approver container
+        secondApproverContainer.style.display = 'block';
+        
+        // Reset second approver selection
+        secondApproverSelect.value = '';
+        
+        // Disable the selected first approver in second approver list
+        Array.from(secondApproverSelect.options).forEach(option => {
+            option.disabled = option.value === firstApproverValue;
+        });
+        
+        // Update combined approvers
+        combinedApproversInput.value = firstApproverValue;
+    }
+    
+    function cancelSecondApprover() {
+        const secondApproverContainer = document.getElementById('second-approver-container');
+        const secondApproverSelect = document.getElementById('second-approver');
+        const firstApproverSelect = document.getElementById('approved-mgt');
+        const combinedApproversInput = document.getElementById('combined-approvers');
+        
+        // Hide the second approver container
+        secondApproverContainer.style.display = 'none';
+        
+        // Reset second approver selection
+        secondApproverSelect.value = '';
+        
+        // Update combined approvers with just the first approver
+        combinedApproversInput.value = firstApproverSelect.value;
+    }
+    
+    // Add event listener for second approver selection
+    document.getElementById('second-approver').addEventListener('change', function() {
+        const firstApproverSelect = document.getElementById('approved-mgt');
+        const combinedApproversInput = document.getElementById('combined-approvers');
+        
+        if (this.value) {
+            // Combine both approvers with comma separation
+            combinedApproversInput.value = `${firstApproverSelect.value},${this.value}`;
+        } else {
+            // If second approver is deselected, keep only first approver
+            combinedApproversInput.value = firstApproverSelect.value;
+        }
+    });
+    
+    // Initialize the form
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstApproverSelect = document.getElementById('approved-mgt');
+        const combinedApproversInput = document.getElementById('combined-approvers');
+        
+        // Set initial value
+        if (firstApproverSelect.value) {
+            combinedApproversInput.value = firstApproverSelect.value;
+        }
+    });
+     */  
+    //suppliers
+
+
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize form handlers
+        const form = document.getElementById('test-form');
+        const submitFormButton = document.getElementById('submit-form-button');
+        const addSupplierButton = document.getElementById('add-supplier-button');
+    
+        // Handle form submission
+        form.addEventListener('submit', handleFormSubmission);
+    
+        // Handle supplier creation
+        if (addSupplierButton) {
+            addSupplierButton.addEventListener('click', addSupplier);
+        }
+    
+        // Initialize select2 with local data for better filtering
+        fetch('/api/suppliers')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch suppliers');
+                }
+                return response.json();
+            })
+            .then(suppliers => {
+                // Initialize select2 with local data source
+                $('#supplier').select2({
+                    placeholder: 'Type to search supplier...',
+                    allowClear: true,
+                    width: '100%',
+                    data: suppliers.map(supplier => ({
+                        id: supplier.id,
+                        text: supplier.name
+                    })),
+                    matcher: function(params, data) {
+                        // If there are no search terms, return the original data
+                        if ($.trim(params.term) === '') {
+                            return data;
+                        }
+    
+                        // Case-insensitive search when there's a search term
+                        if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+                            return data;
+                        }
+    
+                        // Return null to indicate no match
+                        return null;
+                    },
+                    minimumInputLength: 0,  // Changed to 0 to show all results initially
+                    language: {
+                        noResults: function() {
+                            return "No matching suppliers found";
+                        }
+                    }
+                });
+    
+                // Populate standard select as fallback
+                const supplierSelect = document.getElementById('supplier');
+                if (supplierSelect) {
+                    suppliers.forEach(supplier => {
+                        const option = document.createElement('option');
+                        option.value = supplier.id;
+                        option.textContent = supplier.name;
+                        supplierSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching suppliers:', error));
+    });
+    
+    // Toggle supplier form visibility
+    function toggleAddSupplierForm() {
+        const addSupplierForm = document.getElementById('add-supplier-form');
+        if (addSupplierForm) {
+            addSupplierForm.style.display = addSupplierForm.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+    
+    // Add new supplier
+    async function addSupplier() {
+        const supplierNameInput = document.getElementById('new-supplier-name');
+        const supplierName = supplierNameInput?.value?.trim();
+    
+        if (!supplierName) {
+            alert('Please enter a supplier name.');
+            supplierNameInput.focus();
+            return;
+        }
+    
+        try {
+            const response = await fetch('/manage-suppliers/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: JSON.stringify({ name: supplierName })
+            });
+    
+            if (response.ok) {
+                const newSupplier = await response.json();
+                
+                // Create new option and add it to select2
+                const newOption = new Option(newSupplier.name, newSupplier.id, true, true);
+                $('#supplier').append(newOption).trigger('change');
+                
+                // Clear and close form
+                supplierNameInput.value = '';
+                toggleAddSupplierForm();
+                
+                alert('Supplier added successfully!');
+            } else {
+                throw new Error('Failed to add supplier');
+            }
+        } catch (error) {
+            console.error('Error adding supplier:', error);
+            alert('Error adding supplier. Please try again.');
+        }
+    }
+    
+    // Export for global access
+    window.toggleAddSupplierForm = toggleAddSupplierForm;
+    window.addSupplier = addSupplier;
+
+
+
+
+
+    // Function to handle image preview after upload
+    function previewImage(event) {
+        const file = event.target.files[0]; // Get the file that was selected
+        const reader = new FileReader(); // Create a FileReader object
+    
+        // When the file is successfully loaded
+        reader.onload = function(e) {
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            
+            // Clear any previous images
+            previewContainer.innerHTML = ''; 
+    
+            // Create an image element to display the preview
+            const imgPreview = document.createElement('img');
+            imgPreview.src = e.target.result; // Set the image source to the loaded file
+            imgPreview.style.width = '60px'; // Set the width of the image to 60px
+            imgPreview.style.height = '60px'; // Set the height of the image to 60px
+            
+            // Append the image to the preview container
+            previewContainer.appendChild(imgPreview);
+        };
+    
+        // Read the file as a Data URL (base64 string) for the image preview
+        reader.readAsDataURL(file);
+    }
+    
+    function previewFiles(type) {
+        const input = document.getElementById(type === 'image' ? 'image-upload' : 'pdf-upload');
+        const previewContainer = document.getElementById(type === 'image' ? 'imagePreviewContainer' : 'pdfPreviewContainer');
+        
+        // Clear existing previews
+        previewContainer.innerHTML = '';
+        
+        if (!input.files || !input.files.length) {
+            return;
+        }
+    
+        Array.from(input.files).forEach((file, index) => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            
+            // Create remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file';
+            removeBtn.innerHTML = '×';
+            removeBtn.type = 'button'; // Prevent form submission
+            removeBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                previewItem.remove();
+                
+                // Remove file from input
+                const dt = new DataTransfer();
+                const files = input.files;
+                for (let i = 0; i < files.length; i++) {
+                    if (i !== index) {
+                        dt.items.add(files[i]);
+                    }
+                }
+                input.files = dt.files;
+            };
+    
+            if (type === 'image') {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.onload = function() {
+                    URL.revokeObjectURL(this.src);
+                };
+                previewItem.appendChild(img);
+            } else {
+                // PDF preview
+                const pdfPreview = document.createElement('div');
+                pdfPreview.className = 'pdf-preview';
+                pdfPreview.innerHTML = `
+                    <div class="pdf-icon">PDF</div>
+                `;
+                previewItem.appendChild(pdfPreview);
+            }
+    
+            // Add file name
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.title = file.name; // Show full name on hover
+            fileName.textContent = file.name.length > 15 ? 
+                                 file.name.substring(0, 12) + '...' : 
+                                 file.name;
+            
+            // Add file size
+            const fileSize = document.createElement('div');
+            fileSize.className = 'file-size';
+            fileSize.textContent = formatFileSize(file.size);
+            
+            previewItem.appendChild(removeBtn);
+            previewItem.appendChild(fileName);
+            previewItem.appendChild(fileSize);
+            previewContainer.appendChild(previewItem);
+        });
+    }
+    
+    // Helper function to format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    
+
+    
+    // Handle form submission
+    async function handleFormSubmission(event) {
+        event.preventDefault();
+        const form = document.getElementById('test-form');
+        const formData = new FormData(form);
+
+
+
+         // Clear any existing files from formData
+        formData.delete('image-upload[]');
+        formData.delete('pdf-upload[]');
+        
+        // Add all selected images
+    const imageInput = document.getElementById('image-upload');
+    for (let i = 0; i < imageInput.files.length; i++) {
+        formData.append('image-upload[]', imageInput.files[i]);
+    }
+    
+    // Add all selected PDFs
+    const pdfInput = document.getElementById('pdf-upload');
+    for (let i = 0; i < pdfInput.files.length; i++) {
+        formData.append('pdf-upload[]', pdfInput.files[i]);
+    }
+        
+
+
+        // Preserve the original IMP RMTR number format
+        const impRmtrNo = document.getElementById('imp-rmtr-no').value;
+        formData.set('imp_rmtr_no', impRmtrNo);
+        
+        console.log('Submitting form with IMP RMTR No:', impRmtrNo);
+    
+        toggleSubmitButton(true);
+        toggleLoadingIndicator(true);
+    
+        try {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch('/imp_test_request/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                },
+                body: formData,
+            });
+    
+            // Log the raw response for debugging
+            const responseText = await response.text();
+            console.log('Raw server response:', responseText);
+    
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status} - ${responseText}`);
+            }
+    
+            const responseData = JSON.parse(responseText);
+            
+            if (responseData.status === 'success') {
+                document.getElementById('form-message').textContent = 'Form submitted successfully! Redirecting...';
+                document.getElementById('form-message').style.display = 'block';
+    
+                setTimeout(() => {
+                    window.location.href = responseData.redirect || '/dashboard/';
+                }, 2000);
+            } else {
+                throw new Error(responseData.message || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
+            document.getElementById('form-error').textContent = error.message;
+            document.getElementById('form-error').style.display = 'block';
+        } finally {
+            toggleSubmitButton(false);
+            toggleLoadingIndicator(false);
+        }
+    }
+    // Function to toggle the submit button state
+    function toggleSubmitButton(disable) {
+        const submitButton = document.getElementById('submit-form-button');
+        submitButton.disabled = disable;
+        submitButton.textContent = disable ? 'Processing...' : 'Submit';
+    }
+    
+    // Function to toggle loading indicator visibility
+    function toggleLoadingIndicator(show) {
+        const loadingIndicator = document.getElementById('loading-indicator');
+        loadingIndicator.style.display = show ? 'inline' : 'none';
+    }
+    
+    
+    // document.getElementById('test-form').addEventListener('submit', handleFormSubmission);
+    
+    </script>
+    
+
+
+
+
+
+</body>
+</html>
