@@ -1,2 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
 
-.codegpt
+# Django
+*.log
+db.sqlite3
+staticfiles/
+media/artwork/*
+!media/artwork/.gitkeep
+
+# Environment
+.env
+venv/
+.venv/
+.virtualenvs/
+
+# IDE
+.idea/
+.vscode/
+.codegpt/
+
+# OS
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# Temp upload chunks
+artwork_chunks/
+
+# Secrets
+*.pem
+credentials.json

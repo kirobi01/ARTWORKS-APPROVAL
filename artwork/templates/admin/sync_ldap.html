@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; Sync Active Directory Users
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Sync Active Directory Users</h1>
+  <p>Pull user accounts from <strong>{{ settings.LDAP_SERVER_URI }}</strong> into the Artwork Approval system.
+     Users sign in with their normal AD password. After sync, assign them to approval groups under <em>Users</em>.</p>
+
+  <form method="post" style="max-width:560px;background:#f8f9fa;padding:24px;border-radius:8px;border:1px solid #ddd;">
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      <div class="form-row">
+        <label><input type="checkbox" name="update_existing" checked> Update existing users with latest AD data</label>
+      </div>
+      <div class="form-row">
+        <label><input type="checkbox" name="dry_run"> Dry run (preview only — no database changes)</label>
+      </div>
+    </fieldset>
+    <div class="submit-row" style="padding:16px 0 0;border:none;">
+      <input type="submit" value="Run AD Sync Now" class="default" style="background:#CC1C24;padding:10px 24px;">
+      <a href="{% url 'admin:index' %}" class="button cancel-link">Back to admin</a>
+    </div>
+  </form>
+
+  {% if result %}
+  <div style="margin-top:24px;padding:20px;border-radius:8px;border:1px solid {% if result.success %}#c3e6cb{% else %}#f5c6cb{% endif %};background:{% if result.success %}#d4edda{% else %}#f8d7da{% endif %};">
+    <h3 style="margin-top:0;">{% if result.success %}Sync completed{% else %}Sync finished with issues{% endif %}</h3>
+    <p>{{ result.message }}</p>
+    <table style="width:auto;">
+      <tr><td>LDAP entries found</td><td><strong>{{ result.total_ldap_entries }}</strong></td></tr>
+      <tr><td>Created</td><td><strong>{{ result.created }}</strong></td></tr>
+      <tr><td>Updated</td><td><strong>{{ result.updated }}</strong></td></tr>
+      <tr><td>Skipped</td><td><strong>{{ result.skipped }}</strong></td></tr>
+      <tr><td>Errors</td><td><strong>{{ result.errors }}</strong></td></tr>
+    </table>
+    {% if result.log_lines %}
+    <details style="margin-top:12px;">
+      <summary>Verbose log ({{ result.log_lines|length }} lines)</summary>
+      <pre style="max-height:300px;overflow:auto;font-size:11px;background:#fff;padding:12px;border-radius:4px;">{% for line in result.log_lines %}{{ line }}
+{% endfor %}</pre>
+    </details>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if recent_syncs %}
+  <h2 style="margin-top:32px;">Recent sync history</h2>
+  <table class="adminlist" style="width:100%;">
+    <thead>
+      <tr>
+        <th>When</th><th>By</th><th>Status</th><th>Created</th><th>Updated</th><th>Skipped</th><th>Errors</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in recent_syncs %}
+      <tr>
+        <td>{{ s.started_at }}</td>
+        <td>{{ s.triggered_by|default:"System" }}</td>
+        <td>{% if s.success %}✓{% else %}✗{% endif %}{% if s.dry_run %} (dry){% endif %}</td>
+        <td>{{ s.created_count }}</td>
+        <td>{{ s.updated_count }}</td>
+        <td>{{ s.skipped_count }}</td>
+        <td>{{ s.errors_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

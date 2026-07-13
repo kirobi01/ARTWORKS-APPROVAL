@@ -1,0 +1,24 @@
+{% comment %}Read-only color specifications table. Expects `artwork` in context.{% endcomment %}
+<table class="data-table compact-table">
+    <thead>
+        <tr><th>#</th><th>Color</th><th>Color Name</th><th>CMYK Values</th></tr>
+    </thead>
+    <tbody>
+        {% for c in artwork.color_specs.all %}
+        {% if c.has_content %}
+        <tr>
+            <td>{{ c.slot_number }}</td>
+            <td>
+                {% if c.swatch_color %}
+                <span class="color-swatch-box" style="background:{{ c.swatch_color }};" title="{{ c.swatch_color }}"></span>
+                {% elif c.color_swatch %}
+                <img src="{{ c.color_swatch.url }}" width="40" height="24" class="swatch-thumb">
+                {% else %}—{% endif %}
+            </td>
+            <td>{{ c.color_name|default:"—" }}</td>
+            <td>{{ c.cmyk_values|default:"—" }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>

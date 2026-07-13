@@ -1,0 +1,162 @@
+{% extends 'artwork/base.html' %}
+{% load static %}
+{% block title %}{{ stage_config.display }} Approval{% endblock %}
+{% block page_title %}{{ stage_config.display }} Review — {{ artwork.artwork_no }}{% endblock %}
+{% block content %}
+
+<div class="approval-layout">
+    <div class="approval-main">
+        <div class="card approval-summary">
+            <div class="approval-summary-grid">
+                <div><span class="summary-label">Product</span><strong>{{ artwork.product_name }}</strong></div>
+                <div><span class="summary-label">Category</span><strong>{{ artwork.product_category|default:"—" }}</strong></div>
+                <div><span class="summary-label">SKU</span><strong>{{ artwork.sku_size|default:"—" }}</strong></div>
+                <div><span class="summary-label">Designer</span><strong>{{ artwork.created_by.get_full_name|default:artwork.created_by.username }}</strong></div>
+                <div><span class="summary-label">Revision</span><strong>{{ artwork.revision_count }}</strong></div>
+                <div><span class="summary-label">Status</span><span class="badge badge-pending">{{ artwork.status }}</span></div>
+            </div>
+            {% if artwork.reason_for_update %}
+            <p class="approval-reason"><strong>Reason:</strong> {{ artwork.reason_for_update }}</p>
+            {% endif %}
+            <div class="btn-group" style="margin-top:12px;">
+                <a href="{% url 'download-artwork-pdf' artwork.artwork_no %}" class="btn btn-outline">Download PDF</a>
+            </div>
+        </div>
+
+        {% if primary_attachment and primary_attachment.file_type == 'artwork_image' %}
+        <div class="artwork-hero">
+            <img src="{% url 'attachment-preview' artwork.artwork_no primary_attachment.id %}"
+                 alt="Primary artwork"
+                 onclick="openImagePreview('{% url 'attachment-preview' artwork.artwork_no primary_attachment.id %}')">
+            <p class="zoom-hint">Click to zoom</p>
+        </div>
+        {% elif attachments %}
+        <div class="card">
+            <h3>Artwork Files</h3>
+            <div class="thumb-grid">
+                {% for att in attachments %}
+                <div class="thumb-item">
+                    {% if att.file_type == 'artwork_image' %}
+                    <img src="{% url 'attachment-preview' artwork.artwork_no att.id %}"
+                         onclick="openImagePreview('{% url 'attachment-preview' artwork.artwork_no att.id %}')">
+                    {% else %}
+                    <a href="{% url 'attachment-preview' artwork.artwork_no att.id %}" target="_blank" class="btn btn-primary">Open PDF</a>
+                    {% endif %}
+                    <div class="thumb-name">{{ att.original_filename }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <details class="form-section">
+            <summary>Product &amp; Packaging Details</summary>
+            <div class="form-section-body">
+                <table class="data-table compact-table">
+                    <tr><th>KEBS #</th><td>{{ artwork.kebs_number|default:"—" }}</td><th>Artwork Size</th><td>{{ artwork.artwork_size|default:"—" }}</td></tr>
+                    <tr><th>Barcode</th><td>{{ artwork.barcode|default:"—" }}</td><th>Print Type</th><td>{{ artwork.print_type|default:"—" }}</td></tr>
+                    <tr><th>Packaging Dims</th><td>{{ artwork.dimensions_packaging|default:"—" }}</td><th>Supplier</th><td>{{ artwork.packaging_supplier|default:"—" }}</td></tr>
+                    <tr><th>Lamination</th><td colspan="3">{{ artwork.lamination|default:"—" }}</td></tr>
+                </table>
+            </div>
+        </details>
+
+        <details class="form-section approval-collapsible">
+            <summary>Logo Checks <span class="section-hint">{{ logo_summary }}</span></summary>
+            <div class="form-section-body">
+                {% include 'artwork/includes/logo_checks_readonly.html' %}
+            </div>
+        </details>
+
+        {% if has_color_specs %}
+        <details class="form-section approval-collapsible" open>
+            <summary>Color Specifications</summary>
+            <div class="form-section-body">
+                {% include 'artwork/includes/color_specs_readonly.html' %}
+            </div>
+        </details>
+        {% endif %}
+
+        <details class="form-section approval-collapsible">
+            <summary>Artwork Text Checks <span class="section-hint">optional</span></summary>
+            <div class="form-section-body">
+                <table class="data-table compact-table">
+                    {% if artwork.not_hydrogenated_text %}<tr><th>Not Hydrogenated</th><td>{{ artwork.not_hydrogenated_text }}</td></tr>{% endif %}
+                    {% if artwork.net_weight_e %}<tr><th>Net Weight "e"</th><td>{{ artwork.net_weight_e }}</td></tr>{% endif %}
+                    {% if artwork.pre_printed_expiry %}<tr><th>Pre-Printed Expiry</th><td>{{ artwork.pre_printed_expiry }}</td></tr>{% endif %}
+                    {% if artwork.fortification_text %}<tr><th>Fortification</th><td>{{ artwork.fortification_text }}</td></tr>{% endif %}
+                    {% if artwork.nema_requirements %}<tr><th>NEMA</th><td>{{ artwork.nema_requirements }}</td></tr>{% endif %}
+                    {% if artwork.triple_refined %}<tr><th>Triple Refined</th><td>{{ artwork.triple_refined }}</td></tr>{% endif %}
+                    {% if artwork.storage_condition %}<tr><th>Storage</th><td>{{ artwork.storage_condition }}</td></tr>{% endif %}
+                </table>
+                {% if not artwork.not_hydrogenated_text and not artwork.net_weight_e and not artwork.pre_printed_expiry and not artwork.fortification_text and not artwork.nema_requirements and not artwork.triple_refined and not artwork.storage_condition %}
+                <p class="text-muted">No text checks recorded.</p>
+                {% endif %}
+                {% if artwork.ingredients %}
+                <h4 class="approval-subheading">Ingredients</h4>
+                <p>{{ artwork.ingredients|linebreaks }}</p>
+                {% endif %}
+            </div>
+        </details>
+
+        {% if artwork.is_rejected %}
+        <div class="card card--danger">
+            <h3>Previous Rejection</h3>
+            <p><strong>{{ artwork.rejection_stage }}</strong> — {{ artwork.rejection_comments }}</p>
+        </div>
+        {% endif %}
+
+        <details class="form-section">
+            <summary>Approval History</summary>
+            <div class="form-section-body">
+                <ul class="timeline">
+                    {% for item in approval_timeline %}
+                    <li class="{{ item.status|lower }}">
+                        <strong>{{ item.stage }}</strong> — {{ item.name }}
+                        <span class="badge badge-{% if item.status == 'Approved' %}completed{% elif item.status == 'Rejected' %}revision{% else %}pending{% endif %}">{{ item.status }}</span>
+                        {% if item.date %}<small>{{ item.date }}</small>{% endif %}
+                        {% if item.comments %}<br><em>{{ item.comments }}</em>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </details>
+    </div>
+
+    <div class="approval-sidebar">
+        <div class="card approval-panel approval-decision">
+            <h3>Your Decision</h3>
+            <p class="text-muted">{{ stage_config.display }}</p>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="approvalComments">Comments (required)</label>
+                <textarea id="approvalComments" class="form-control" rows="5"
+                          placeholder="Enter approval or rejection comments..."
+                          {% if already_acted %}disabled{% endif %}></textarea>
+            </div>
+            <div class="btn-group" style="flex-direction:column;">
+                <button class="btn btn-success btn-lg" onclick="submitApproval('approved')" {% if already_acted %}disabled{% endif %}>Approve</button>
+                <button class="btn btn-danger btn-lg" onclick="submitApproval('rejected')" {% if already_acted %}disabled{% endif %}>Reject — Send to Designer</button>
+            </div>
+            {% if already_acted %}
+            <p class="text-muted" style="margin-top:12px;">You have already acted on this artwork.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3>Workflow</h3>
+            <div class="stepper stepper-vertical">
+                {% for item in approval_timeline %}
+                <div class="stepper-step {% if item.status == 'Approved' %}done{% elif item.status == 'Rejected' %}rejected{% elif item.status == 'Pending' and forloop.last %}active{% endif %}">
+                    <div class="stepper-dot">{% if item.status == 'Approved' %}✓{% elif item.status == 'Rejected' %}✗{% else %}{{ forloop.counter }}{% endif %}</div>
+                    <div class="stepper-label">{{ item.stage }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'artwork/js/upload.js' %}"></script>
+{% endblock %}

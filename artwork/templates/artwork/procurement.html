@@ -1,0 +1,26 @@
+{% extends 'artwork/base.html' %}
+{% block title %}Procurement{% endblock %}
+{% block page_title %}Procurement — {{ artwork.artwork_no }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>SAP Details</h2>
+    <p style="color:var(--text-muted);margin-bottom:24px;">{{ artwork.product_name }} · {{ artwork.sku_size }}</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label>SAP Material Description</label>
+                {{ form.sap_material_description }}
+            </div>
+            <div class="form-group">
+                <label>SAP Material Code</label>
+                {{ form.sap_material_code }}
+            </div>
+        </div>
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Save SAP Details</button>
+            <a href="{% url 'artwork-detail' artwork.artwork_no %}" class="btn btn-outline">Back</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'artwork/base.html' %}
+{% block title %}{{ page_title|default:"All Artworks" }}{% endblock %}
+{% block page_title %}{{ page_title|default:"All Artworks" }}{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">Browse and manage artwork across drafts, pending review, and completed records.</p>
+{% endblock %}
+{% block page_actions %}
+{% if nav_is_design or user.is_superuser %}
+<a href="{% url 'artwork-create' %}" class="btn btn-primary">+ New Artwork</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card">
+    <nav class="list-tabs" aria-label="Artwork lists">
+        <a href="{% url 'artwork-drafts' %}" class="list-tab {% if active_tab == 'drafts' %}active{% endif %}">Drafts</a>
+        <a href="{% url 'artwork-pending' %}" class="list-tab {% if active_tab == 'pending' %}active{% endif %}">Pending</a>
+        <a href="{% url 'artwork-completed' %}" class="list-tab {% if active_tab == 'completed' %}active{% endif %}">Completed</a>
+        <a href="{% url 'artwork-all' %}" class="list-tab {% if active_tab == 'all' %}active{% endif %}">All</a>
+        <a href="{% url 'artwork-my' %}" class="list-tab {% if active_tab == 'my' %}active{% endif %}">My Artworks</a>
+    </nav>
+
+    {% if active_tab == 'all' %}
+    <form method="get" class="search-bar">
+        <input type="text" name="q" value="{{ search|default:'' }}" class="form-control search-input" placeholder="Search artwork no, product, SKU...">
+        <select name="status" class="form-control search-select">
+            <option value="">All Statuses</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search or status_filter %}<a href="{% url 'artwork-all' %}" class="btn btn-outline">Clear</a>{% endif %}
+    </form>
+    {% elif show_search %}
+    <form method="get" class="search-bar">
+        <input type="text" name="q" value="{{ search|default:'' }}" class="form-control search-input" placeholder="Search artwork no, product, SKU...">
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search %}<a href="?" class="btn btn-outline">Clear</a>{% endif %}
+    </form>
+    {% endif %}
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Artwork No</th>
+                    <th>Product Name</th>
+                    <th>SKU</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for art in artworks %}
+                <tr>
+                    <td><strong>{{ art.artwork_no }}</strong></td>
+                    <td>{% if art.product_name %}{{ art.product_name }}{% else %}<em class="text-muted">Untitled draft</em>{% endif %}</td>
+                    <td>{{ art.sku_size|default:"—" }}</td>
+                    <td>
+                        <span class="badge {% if art.status == 'Draft' %}badge-draft{% elif 'Completed' in art.status %}badge-completed{% elif 'Revision' in art.status %}badge-revision{% else %}badge-pending{% endif %}">
+                            {{ art.status }}
+                        </span>
+                        {% if art.status == 'Completed / Approved' %}
+                        <div class="sap-tag-wrap">
+                            {% if art.sap_material_code and art.sap_material_description %}
+                            <span class="badge badge-info" title="SAP Material Code">SAP: {{ art.sap_material_code }}</span>
+                            {% else %}
+                            <span class="badge badge-revision" title="Procurement has not filled SAP details">SAP pending</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ art.created_by.get_full_name|default:art.created_by.username }}</td>
+                    <td>{{ art.date_created|date:"d M Y" }}</td>
+                    <td class="table-actions">
+                        {% if art.status == 'Draft' and art.created_by_id == user.id %}
+                        <a href="{% url 'artwork-edit' art.artwork_no %}" class="btn btn-primary">Continue</a>
+                        {% endif %}
+                        <a href="{% url 'artwork-detail' art.artwork_no %}" class="btn btn-outline">View</a>
+                        {% if art.status == 'Completed / Approved' and show_pdf %}
+                        <a href="{% url 'download-artwork-pdf' art.artwork_no %}?inline=1" target="_blank" rel="noopener" class="btn btn-outline">Preview</a>
+                        <a href="{% url 'download-artwork-pdf' art.artwork_no %}" class="btn {% if pdf_primary %}btn-primary{% else %}btn-outline{% endif %}">Download</a>
+                        {% endif %}
+                        {% if art.status == 'Pending: Marketing & Sales Approval' %}
+                        <a href="{% url 'marketing-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% elif art.status == 'Pending: Quality Assurance Approval' %}
+                        <a href="{% url 'qa-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% elif art.status == 'Pending: Operations HOD Approval' %}
+                        <a href="{% url 'operations-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% elif art.status == 'Pending: Product Development Approval' %}
+                        <a href="{% url 'product-dev-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% elif art.status == 'Pending: Milan Shah Approval' %}
+                        <a href="{% url 'milan-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <p>No artworks in this list yet.</p>
+                            {% if active_tab == 'drafts' and nav_is_design %}
+                            <a href="{% url 'artwork-create' %}" class="btn btn-primary" style="margin-top:12px;">Start a new draft</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

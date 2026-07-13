@@ -1,0 +1,11 @@
+[
+  {"model": "artwork.logotemplate", "pk": 1, "fields": {"name": "Kapa", "display_order": 1, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 2, "fields": {"name": "Dust Bin", "display_order": 2, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 3, "fields": {"name": "QMS", "display_order": 3, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 4, "fields": {"name": "Kuboresha Afya", "display_order": 4, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 5, "fields": {"name": "KEBS", "display_order": 5, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 6, "fields": {"name": "Recycling", "display_order": 6, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 7, "fields": {"name": "Touch of Kenya", "display_order": 7, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 8, "fields": {"name": "Halal", "display_order": 8, "is_active": true}},
+  {"model": "artwork.logotemplate", "pk": 9, "fields": {"name": "Cholesterol Free", "display_order": 9, "is_active": true}}
+]

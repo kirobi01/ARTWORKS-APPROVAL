@@ -1,0 +1,46 @@
+{% extends 'artwork/base.html' %}
+{% block title %}Edit Logo{% endblock %}
+{% block page_title %}Edit Logo — {{ logo.name }}{% endblock %}
+{% block content %}
+
+<div class="card">
+    <div class="logo-library-edit-preview">
+        {% if logo.icon %}
+        <img src="{% url 'logo-template-icon' logo.id %}" alt="{{ logo.name }}">
+        {% else %}
+        <span class="logo-placeholder">{{ logo.name|slice:":2"|upper }}</span>
+        {% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div class="form-errors-box">
+            <ul>{% for field, errors in form.errors.items %}<li>{{ field }}: {{ errors|join:", " }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_name">Logo name</label>
+            {{ form.name }}
+        </div>
+        <div class="form-group">
+            <label for="id_icon">Replace image (optional)</label>
+            {{ form.icon }}
+            <p class="text-muted">Leave blank to keep the current image.</p>
+        </div>
+        <div class="form-group form-check-row">
+            <label>{{ form.is_active }} Show on artwork form</label>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" name="action" value="save" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'logo-library' %}" class="btn btn-outline">Back to Library</a>
+            <button type="submit" name="action" value="delete" class="btn btn-danger"
+                    onclick="return confirm('Remove &quot;{{ logo.name }}&quot; from the library?');">
+                Delete Logo
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

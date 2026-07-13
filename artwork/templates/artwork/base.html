@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Artwork Approval{% endblock %} | Kapa Oil Refineries</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'artwork/css/main.css' %}?v=4">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar" id="sideNav" aria-label="Main navigation">
+        <div class="sidebar-brand">
+            <a href="{% url 'dashboard' %}" class="sidebar-brand-link">
+                <span class="sidebar-logo-wrap">
+                    <img src="{% static 'images/kapa_logo.png' %}" alt="" class="sidebar-logo">
+                </span>
+                <span class="sidebar-brand-text">
+                    <span class="sidebar-brand-name">Kapa Oil</span>
+                    <span class="sidebar-brand-sub">Artwork Approval</span>
+                </span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <p class="sidebar-nav-label">Overview</p>
+            <a href="{% url 'dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>
+                </span>
+                Dashboard
+            </a>
+            {% if nav_is_design or user.is_superuser %}
+            <p class="sidebar-nav-label">Design</p>
+            <a href="{% url 'artwork-create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-create' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+                Create Artwork
+            </a>
+            <a href="{% url 'logo-library' %}" class="sidebar-link {% if request.resolver_match.url_name == 'logo-library' or request.resolver_match.url_name == 'logo-library-edit' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.75"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                Logo Library
+            </a>
+            {% endif %}
+            <p class="sidebar-nav-label">Workflow</p>
+            <a href="{% url 'artwork-drafts' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-drafts' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>
+                </span>
+                Drafts
+            </a>
+            <a href="{% url 'artwork-pending' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-pending' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+                </span>
+                Pending
+            </a>
+            <a href="{% url 'artwork-completed' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-completed' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                Completed
+            </a>
+            <p class="sidebar-nav-label">Records</p>
+            <a href="{% url 'artwork-my' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-my' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.75"/></svg>
+                </span>
+                My Artworks
+            </a>
+            <a href="{% url 'artwork-all' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-all' %}active{% endif %}">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </span>
+                All Artworks
+            </a>
+            {% if user.is_staff %}
+            <p class="sidebar-nav-label">System</p>
+            <a href="/admin/" class="sidebar-link" target="_blank" rel="noopener">
+                <span class="sidebar-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.75"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.75"/></svg>
+                </span>
+                Admin
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="sidebar-profile-avatar">{{ nav_initials }}</span>
+            <div class="sidebar-profile-meta">
+                <span class="sidebar-profile-name">{{ nav_display_name }}</span>
+                {% if user.email %}
+                <span class="sidebar-profile-email">{{ user.email }}</span>
+                {% else %}
+                <span class="sidebar-profile-email">{{ user.username }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </aside>
+
+    <div class="nav-overlay" id="navOverlay" onclick="toggleNav()" aria-hidden="true"></div>
+
+    <div class="app-main">
+        <header class="app-topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle" onclick="toggleNav()" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <span class="topbar-brand">Kapa Artwork Approval</span>
+            </div>
+            <div class="topbar-right">
+                <a href="{% url 'logout' %}" class="topbar-logout" title="Logout">Logout</a>
+                <span class="topbar-avatar" title="{{ nav_display_name }}">{{ nav_initials }}</span>
+            </div>
+        </header>
+
+        <main class="page-content">
+            <div class="page-content-inner">
+                {% if request.resolver_match.url_name != 'dashboard' %}
+                <nav class="page-nav-row" aria-label="Page navigation">
+                    <button type="button" class="page-back" onclick="goBack()">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M10.5 12.5L6 8l4.5-4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Back
+                    </button>
+                </nav>
+                {% endif %}
+
+                <header class="main-header">
+                    <div class="main-header-text">
+                        <h1 class="main-header-title">{% block page_title %}Artwork Approval{% endblock %}</h1>
+                        {% block page_subtitle %}{% endblock %}
+                    </div>
+                    <div class="main-header-actions">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </header>
+
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<div id="imageViewer" class="image-viewer" style="display:none;">
+    <div class="viewer-toolbar">
+        <button type="button" onclick="ArtworkViewer.zoomIn()">Zoom In</button>
+        <button type="button" onclick="ArtworkViewer.zoomOut()">Zoom Out</button>
+        <button type="button" onclick="ArtworkViewer.resetZoom()">Reset</button>
+        <button type="button" onclick="ArtworkViewer.close()">Close</button>
+    </div>
+    <div class="viewer-canvas" id="viewerCanvas">
+        <img id="viewerImage" src="" alt="Artwork preview">
+    </div>
+</div>
+
+<script src="{% static 'artwork/js/viewer.js' %}"></script>
+<script>
+function toggleNav() {
+    document.getElementById('sideNav').classList.toggle('open');
+    document.getElementById('navOverlay').classList.toggle('open');
+    document.body.classList.toggle('nav-open');
+}
+function goBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.location.href = '{% url "dashboard" %}';
+    }
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,260 @@
+{% extends 'artwork/base.html' %}
+{% load static %}
+{% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Artwork{% endblock %}
+{% block page_title %}{% if is_edit %}Edit {{ artwork.artwork_no }}{% else %}Create New Artwork{% endif %}{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">{% if is_edit %}Update details, attachments, and logo checks.{% else %}Enter product information and submit for approval.{% endif %}</p>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'artwork/js/logo_picker.js' %}"></script>
+<script src="{% static 'artwork/js/category_picker.js' %}"></script>
+<script src="{% static 'artwork/js/upload.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if is_edit and artwork %}
+    const zone = document.getElementById('uploadZone');
+    const fileList = document.getElementById('fileList');
+    if (zone) {
+        ChunkUploader.initDropZone(zone, '{{ artwork.artwork_no }}', fileList, () => location.reload());
+    }
+    {% endif %}
+
+    function cmykToHex(str) {
+        const nums = (String(str).match(/\d+(?:\.\d+)?/g) || []).slice(0, 4).map(Number);
+        if (nums.length < 4) return '';
+        const [c, m, y, k] = nums.map(n => Math.min(100, Math.max(0, n)) / 100);
+        const r = Math.round(255 * (1 - c) * (1 - k));
+        const g = Math.round(255 * (1 - m) * (1 - k));
+        const b = Math.round(255 * (1 - y) * (1 - k));
+        return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    document.querySelectorAll('.cmyk-input').forEach(function(input) {
+        const slot = input.dataset.slot;
+        const swatch = document.querySelector('.cmyk-swatch[data-slot="' + slot + '"]');
+        const hidden = document.querySelector('.cmyk-hex[data-slot="' + slot + '"]');
+        function update() {
+            const hex = cmykToHex(input.value);
+            if (hex) {
+                swatch.style.background = hex;
+                swatch.classList.add('has-color');
+                if (hidden) hidden.value = hex;
+            } else {
+                swatch.style.background = '';
+                swatch.classList.remove('has-color');
+                if (hidden) hidden.value = '';
+            }
+        }
+        input.addEventListener('input', update);
+        update();
+    });
+});
+</script>
+{% endblock %}
+{% block content %}
+<div class="card">
+    {% if is_edit %}
+    <div class="card-header card-header--actions">
+        <div>
+            <span class="badge badge-info">{{ artwork.status }}</span>
+        </div>
+        <a href="{% url 'download-artwork-pdf' artwork.artwork_no %}" class="btn btn-outline">Download PDF</a>
+    </div>
+    {% endif %}
+
+    {% if not is_edit %}
+    <div class="create-intro">
+        <strong>Quick start:</strong> Fill in what you can, use <em>Save as Draft</em> to finish later, or <em>Submit for Approval</em> when ready.
+    </div>
+    {% elif artwork.status == 'Draft' %}
+    <div class="create-intro">
+        <strong>Draft:</strong> Your changes are not in the approval queue until you submit.
+    </div>
+    {% endif %}
+
+    {% if form.errors %}
+    <div class="form-errors-box">
+        <strong>Please fix the following:</strong>
+        <ul>{% for field, errors in form.errors.items %}<li>{{ field }}: {{ errors|join:", " }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <details class="form-section" open>
+            <summary>Essential Information</summary>
+            <div class="form-section-body">
+                <div class="form-group">
+                    <label>Reason for Update</label>
+                    {{ form.reason_for_update }}
+                </div>
+                <div class="form-grid form-grid-3">
+                    {% include 'artwork/includes/lookup_field.html' with label='Product Category' select_field=form.product_category new_field=form.new_product_category add_title='Add new category' back_title='Back to list' %}
+                    <div class="form-group"><label>Product Name</label>{{ form.product_name }}</div>
+                    <div class="form-group"><label>SKU Size</label>{{ form.sku_size }}</div>
+                    <div class="form-group"><label>KEBS Number</label>{{ form.kebs_number }}</div>
+                    <div class="form-group"><label>Artwork Size</label>{{ form.artwork_size }}</div>
+                    <div class="form-group"><label>Barcode</label>{{ form.barcode }}</div>
+                </div>
+            </div>
+        </details>
+
+        <details class="form-section" {% if is_edit %}open{% endif %}>
+            <summary>Packaging &amp; Print Details <span class="section-hint">optional</span></summary>
+            <div class="form-section-body">
+                <div class="form-grid form-grid-3">
+                    <div class="form-group"><label>Dimensions Packaging</label>{{ form.dimensions_packaging }}</div>
+                    <div class="form-group"><label>Eye Mark Size</label>{{ form.eye_mark_size }}</div>
+                    <div class="form-group"><label>Print Type</label>{{ form.print_type }}</div>
+                    <div class="form-group"><label>Unwinding Direction</label>{{ form.unwinding_direction }}</div>
+                    {% include 'artwork/includes/lookup_field.html' with label='Packaging Supplier' select_field=form.packaging_supplier new_field=form.new_packaging_supplier add_title='Add new supplier' back_title='Back to list' %}
+                    <div class="form-group"><label>Lamination</label>{{ form.lamination }}</div>
+                </div>
+            </div>
+        </details>
+
+        <details class="form-section" open>
+            <summary>Logo Checks</summary>
+            <div class="form-section-body">
+                <div class="form-grid form-grid-4">
+                    <div class="form-group"><label>Logo Size</label>{{ form.logo_size_status }}</div>
+                    <div class="form-group"><label>Brand Text</label>{{ form.brand_text_status }}</div>
+                    <div class="form-group"><label>R Mark</label>{{ form.r_mark_status }}</div>
+                    <div class="form-group"><label>Number of Colors</label>{{ form.number_of_colors }}</div>
+                </div>
+
+                <p class="logo-picker-help">
+                    Click a logo to mark it as used on this artwork. Click again to remove.
+                    Use <strong>N/A</strong> if the logo does not apply.
+                    {% if nav_is_design or user.is_superuser %}
+                    <a href="{% url 'logo-library' %}">Manage logos in the Logo Library →</a>
+                    {% endif %}
+                </p>
+
+                <div class="logo-picker" id="logoPicker">
+                    {% for item in logo_tiles %}
+                    {% with tmpl=item.template %}
+                    <div class="logo-tile" data-logo-id="{{ tmpl.id }}">
+                        <input type="hidden" name="logo_status_{{ tmpl.id }}" value="{{ item.status }}">
+                        <button type="button" class="logo-tile-select" title="Toggle {{ tmpl.name }}">
+                            <span class="logo-tile-check" aria-hidden="true">✓</span>
+                            {% if tmpl.icon %}
+                            <img src="{% url 'logo-template-icon' tmpl.id %}" alt="{{ tmpl.name }}" class="logo-tile-img">
+                            {% else %}
+                            <span class="logo-placeholder">{{ tmpl.name|slice:":2"|upper }}</span>
+                            {% endif %}
+                            <span class="logo-tile-name">{{ tmpl.name }}</span>
+                        </button>
+                        <button type="button" class="logo-na-btn" title="Mark {{ tmpl.name }} as N/A">N/A</button>
+                        <div class="logo-colors-wrap"{% if item.status != 'Okay' %} hidden{% endif %}>
+                            <input type="text" name="logo_colors_{{ tmpl.id }}" class="form-control"
+                                   placeholder="Colors used (optional)"
+                                   value="{{ item.colors }}">
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% empty %}
+                    <p class="text-muted">No logo templates yet. Ask an admin to add them under Logo templates.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+
+        <details class="form-section">
+            <summary>Artwork Text Checks <span class="section-hint">optional</span></summary>
+            <div class="form-section-body">
+                <div class="form-grid form-grid-3">
+                    <div class="form-group"><label>Not Hydrogenated Text</label>{{ form.not_hydrogenated_text }}</div>
+                    <div class="form-group"><label>Net Weight "e"</label>{{ form.net_weight_e }}</div>
+                    <div class="form-group"><label>Pre-Printed Expiry/BB Date</label>{{ form.pre_printed_expiry }}</div>
+                    <div class="form-group"><label>Fortification Text</label>{{ form.fortification_text }}</div>
+                    <div class="form-group"><label>NEMA Requirements</label>{{ form.nema_requirements }}</div>
+                    <div class="form-group"><label>Triple Refined</label>{{ form.triple_refined }}</div>
+                    <div class="form-group"><label>Storage Condition</label>{{ form.storage_condition }}</div>
+                </div>
+            </div>
+        </details>
+
+        <details class="form-section">
+            <summary>Ingredients &amp; Color Specifications <span class="section-hint">optional</span></summary>
+            <div class="form-section-body">
+                <div class="form-group">
+                    <label>Ingredients (allergens in bold)</label>
+                    {{ form.ingredients }}
+                </div>
+                <p class="logo-picker-help">Type the CMYK values (e.g. <strong>100 0 0 0</strong>) and the live color preview fills automatically. This color is saved and shown to approvers.</p>
+                <table class="data-table compact-table">
+                    <thead><tr><th>Slot</th><th>Color Name</th><th>CMYK Values</th><th>Color</th><th>Swatch image</th></tr></thead>
+                    <tbody>
+                    {% for row in color_slots_data %}
+                    <tr>
+                        <td>{{ row.slot }}</td>
+                        <td><input type="text" name="color_name_{{ row.slot }}" class="form-control" value="{{ row.name }}"></td>
+                        <td><input type="text" name="color_cmyk_{{ row.slot }}" class="form-control cmyk-input" data-slot="{{ row.slot }}"
+                            placeholder="C M Y K" value="{{ row.cmyk }}"></td>
+                        <td>
+                            <span class="cmyk-swatch" data-slot="{{ row.slot }}" title="Live color from CMYK"></span>
+                            <input type="hidden" name="color_hex_{{ row.slot }}" class="cmyk-hex" data-slot="{{ row.slot }}" value="{{ row.hex }}">
+                        </td>
+                        <td>
+                            <input type="file" name="color_swatch_{{ row.slot }}" accept="image/*" class="form-control">
+                            {% if row.swatch %}
+                            <img src="{{ row.swatch.url }}" width="36" height="36" class="swatch-thumb" alt="">
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+
+        <details class="form-section" open>
+            <summary>Main Artwork Files</summary>
+            <div class="form-section-body">
+                {% if is_edit %}
+                <div id="uploadZone" class="upload-zone">
+                    <p>Drag &amp; drop more files here or click to browse</p>
+                    <p class="text-muted">JPG, PNG, PDF, AI, EPS, TIFF, SVG — up to 50MB each</p>
+                </div>
+                {% else %}
+                <p class="logo-picker-help">Upload the main packaging artwork (image or PDF). First file becomes the primary preview.</p>
+                <div class="form-group">
+                    <label for="artwork_files">Select artwork files</label>
+                    <input type="file" id="artwork_files" name="artwork_files" class="form-control"
+                           accept=".jpg,.jpeg,.png,.pdf,.ai,.eps,.tiff,.tif,.svg" multiple>
+                </div>
+                {% endif %}
+                <div id="fileList" class="file-list">
+                    {% for att in attachments %}
+                    <div class="file-item">
+                        {% if att.file_type == 'artwork_image' %}
+                        <img src="{% url 'attachment-preview' artwork.artwork_no att.id %}" width="60" height="60" style="object-fit:cover;cursor:zoom-in;"
+                             onclick="openImagePreview('{% url 'attachment-preview' artwork.artwork_no att.id %}')">
+                        {% else %}
+                        <span class="badge">PDF</span>
+                        {% endif %}
+                        <span>{{ att.original_filename }}</span>
+                        {% if att.is_primary %}<span class="badge badge-completed">Primary</span>{% endif %}
+                        {% if is_edit %}
+                        <a href="{% url 'attachment-download' artwork.artwork_no att.id %}" class="btn btn-secondary">Download</a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
+
+        <div class="btn-group">
+            <button type="submit" name="action" value="save" class="btn btn-secondary">
+                {% if is_edit %}Save Draft{% else %}Save as Draft{% endif %}
+            </button>
+            <button type="submit" name="action" value="submit" class="btn btn-primary">Submit for Approval</button>
+            {% if is_edit %}
+            <a href="{% url 'artwork-detail' artwork.artwork_no %}" class="btn btn-outline">View Detail</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

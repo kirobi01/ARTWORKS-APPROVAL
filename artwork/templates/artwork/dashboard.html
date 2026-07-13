@@ -1,0 +1,99 @@
+{% extends 'artwork/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">Overview of artwork submissions, approvals, and completed records.</p>
+{% endblock %}
+{% block page_actions %}
+{% if nav_is_design or user.is_superuser %}
+<a href="{% url 'artwork-create' %}" class="btn btn-primary">+ New Artwork</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="dashboard-hero">
+    <div class="dashboard-hero-text">
+        <h2>Welcome, {{ nav_display_name }}</h2>
+        <p>Pick up where you left off — review pending items or download completed artwork PDFs.</p>
+    </div>
+</div>
+
+<h2 class="content-section-title">At a glance</h2>
+<div class="metric-grid">
+    {% if nav_is_design or user.is_superuser %}
+    <a href="{% url 'artwork-create' %}" class="metric-card metric-card--create">
+        <span class="metric-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <div class="metric-card-body">
+            <span class="metric-card-label">Create Artwork</span>
+            <span class="metric-card-value">New</span>
+            <span class="metric-card-hint">Start a new submission</span>
+        </div>
+    </a>
+    <a href="{% url 'artwork-drafts' %}" class="metric-card metric-card--drafts">
+        <span class="metric-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.75"/></svg>
+        </span>
+        <div class="metric-card-body">
+            <span class="metric-card-label">My Drafts</span>
+            <span class="metric-card-value">{{ draft_count }}</span>
+            <span class="metric-card-hint">Saved, not yet submitted</span>
+        </div>
+    </a>
+    {% endif %}
+    <a href="{% url 'artwork-pending' %}" class="metric-card metric-card--pending">
+        <span class="metric-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
+        </span>
+        <div class="metric-card-body">
+            <span class="metric-card-label">Pending</span>
+            <span class="metric-card-value">{{ pending_count }}</span>
+            <span class="metric-card-hint">Awaiting approval</span>
+        </div>
+    </a>
+    <a href="{% url 'artwork-completed' %}" class="metric-card metric-card--completed">
+        <span class="metric-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div class="metric-card-body">
+            <span class="metric-card-label">Completed</span>
+            <span class="metric-card-value">{{ completed_count }}</span>
+            <span class="metric-card-hint">Approved with PDF</span>
+        </div>
+    </a>
+    <a href="{% url 'artwork-all' %}" class="metric-card metric-card--all">
+        <span class="metric-card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <div class="metric-card-body">
+            <span class="metric-card-label">All Artworks</span>
+            <span class="metric-card-value">{{ total_count }}</span>
+            <span class="metric-card-hint">Full register</span>
+        </div>
+    </a>
+</div>
+
+{% if recent_pending %}
+<div class="card card--spaced">
+    <h3 class="section-title">Recently Submitted</h3>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr><th>Artwork No</th><th>Product</th><th>Status</th><th>Date</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for art in recent_pending %}
+                <tr>
+                    <td><strong>{{ art.artwork_no }}</strong></td>
+                    <td>{{ art.product_name }}</td>
+                    <td><span class="badge badge-pending">{{ art.status }}</span></td>
+                    <td>{{ art.date_created|date:"d M Y" }}</td>
+                    <td><a href="{% url 'artwork-detail' art.artwork_no %}" class="btn btn-outline btn-sm">Open</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

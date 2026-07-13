@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;color:#333;">
+<div style="border-bottom:3px solid #CC1C24;padding-bottom:10px;">
+    <h2 style="color:#CC1C24;margin:0;">Kapa Oil Refineries — Artwork Approval</h2>
+</div>
+<p>Dear Approver,</p>
+<p>A new artwork submission requires your review.</p>
+<table style="border-collapse:collapse;width:100%;">
+    <tr><td style="padding:5px;font-weight:bold;">Artwork No:</td><td>{{ artwork_no }}</td></tr>
+    <tr><td style="padding:5px;font-weight:bold;">Product:</td><td>{{ product_name }}</td></tr>
+    <tr><td style="padding:5px;font-weight:bold;">SKU:</td><td>{{ sku_size }}</td></tr>
+    <tr><td style="padding:5px;font-weight:bold;">Reason:</td><td>{{ reason_for_update }}</td></tr>
+</table>
+<p><a href="{{ approval_url }}" style="background:#1a73e8;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;">Review Artwork</a></p>
+</body>
+</html>

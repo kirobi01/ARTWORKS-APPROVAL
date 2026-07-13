@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Kapa Artwork Approval</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'artwork/css/login.css' %}">
+</head>
+<body class="login-body">
+<div class="login-container">
+    <img src="{% static 'images/kapa_logo.png' %}" alt="Kapa Oil Refineries" class="login-logo">
+
+    <h1 class="login-hidden-title">Login</h1>
+
+    {% if error %}
+    <div class="login-alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" id="loginForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control"
+                   placeholder="Enter your username" required autofocus autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <label class="login-show-password">
+            <input type="checkbox" id="showPassword">
+            Show password
+        </label>
+        <button type="submit" class="login-submit">Login</button>
+    </form>
+</div>
+<script>
+document.getElementById('showPassword').addEventListener('change', function () {
+    document.getElementById('password').type = this.checked ? 'text' : 'password';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<div class="form-group">
+    <label for="{{ select_field.id_for_label }}">{{ label }}</label>
+    <div class="lookup-field">
+        <div class="category-input-group lookup-select-wrap">
+            {{ select_field }}
+            <button type="button" class="category-action-btn category-add-btn lookup-add-btn" title="{{ add_title }}" aria-label="{{ add_title }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="category-input-group category-input-group--new lookup-new-wrap" hidden>
+            {{ new_field }}
+            <button type="button" class="category-action-btn category-back-btn lookup-back-btn" title="{{ back_title }}" aria-label="{{ back_title }}">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M10.5 12.5L6 8l4.5-4.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>

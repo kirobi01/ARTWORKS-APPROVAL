@@ -1,0 +1,272 @@
+/* Kapa login — corporate portal style */
+
+
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+
+
+*, *::before, *::after { box-sizing: border-box; }
+
+
+
+html, body {
+
+    margin: 0;
+
+    padding: 0;
+
+    height: 100%;
+
+}
+
+
+
+.login-body {
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+    font-size: 14px;
+
+    color: #1c2333;
+
+    -webkit-font-smoothing: antialiased;
+
+}
+
+
+
+.login-container {
+
+    background: #ffffff;
+
+    width: 100%;
+
+    max-width: 380px;
+
+    margin: 24px 16px;
+
+    padding: 40px 36px 36px;
+
+    border-radius: 8px;
+
+    box-shadow: 0 1px 2px rgba(28, 35, 51, 0.04), 0 4px 16px rgba(28, 35, 51, 0.08);
+
+    border: 1px solid #e8ecf2;
+
+}
+
+
+
+.login-logo {
+
+    width: 96px;
+
+    height: auto;
+
+    margin: 0 auto 28px;
+
+    display: block;
+
+    object-fit: contain;
+
+}
+
+
+
+#loginForm {
+
+    width: 100%;
+
+}
+
+
+
+.login-container .form-group {
+
+    margin-bottom: 18px;
+
+}
+
+
+
+.login-container .form-group label {
+
+    display: block;
+
+    font-size: 0.8125rem;
+
+    font-weight: 600;
+
+    color: #1c2333;
+
+    margin-bottom: 6px;
+
+}
+
+
+
+.login-container .form-control {
+
+    display: block;
+
+    width: 100%;
+
+    padding: 10px 12px;
+
+    font-size: 0.875rem;
+
+    font-family: inherit;
+
+    line-height: 1.4;
+
+    border: 1px solid #d8dde6;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #1c2333;
+
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+}
+
+
+
+.login-container .form-control::placeholder {
+
+    color: #9aa3b2;
+
+}
+
+
+
+.login-container .form-control:focus {
+
+    outline: none;
+
+    border-color: #034ea1;
+
+    box-shadow: 0 0 0 3px #eef4fc;
+
+}
+
+
+
+.login-show-password {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 0 0 22px;
+
+    font-size: 0.8125rem;
+
+    font-weight: 400;
+
+    color: #5c6578;
+
+    cursor: pointer;
+
+    user-select: none;
+
+}
+
+
+
+.login-show-password input[type="checkbox"] {
+
+    width: 15px;
+
+    height: 15px;
+
+    margin: 0;
+
+    cursor: pointer;
+
+    accent-color: #034ea1;
+
+}
+
+
+
+.login-submit {
+
+    display: block;
+
+    width: 100%;
+
+    padding: 11px 16px;
+
+    font-size: 0.875rem;
+
+    font-weight: 600;
+
+    font-family: inherit;
+
+    color: #ffffff;
+
+    background: #034ea1;
+
+    border: none;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    transition: background 0.18s ease;
+
+}
+
+
+
+.login-submit:hover {
+
+    background: #023a7a;
+
+}
+
+
+
+.login-alert {
+
+    background: #fdecea;
+
+    color: #8b1a1a;
+
+    border: 1px solid #f5c6cb;
+
+    border-radius: 6px;
+
+    padding: 10px 12px;
+
+    margin-bottom: 18px;
+
+    font-size: 0.8125rem;
+
+}
+
+
+
+.login-hidden-title {
+
+    position: absolute;
+
+    width: 1px;
+
+    height: 1px;
+
+    overflow: hidden;
+
+    clip: rect(0, 0, 0, 0);
+
+}
+

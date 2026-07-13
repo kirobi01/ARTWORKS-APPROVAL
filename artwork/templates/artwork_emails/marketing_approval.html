@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;color:#333;">
+<h2 style="color:#CC1C24;">Artwork Approved — Next Review Required</h2>
+<p>Artwork <strong>{{ artwork_no }}</strong> has been approved by <strong>{{ stage_name }}</strong>.</p>
+<table style="border-collapse:collapse;">
+    <tr><td style="padding:5px;font-weight:bold;">Product:</td><td>{{ product_name }} ({{ sku_size }})</td></tr>
+    <tr><td style="padding:5px;font-weight:bold;">Next Stage:</td><td>{{ next_stage_name }}</td></tr>
+</table>
+<p><a href="{{ approval_url }}">Click here to review</a></p>
+</body>
+</html>

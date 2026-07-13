@@ -1,0 +1,38 @@
+{% if logo_tiles %}
+<div class="approval-logo-block">
+    {% if artwork.logo_size_status or artwork.brand_text_status or artwork.r_mark_status or artwork.number_of_colors %}
+    <table class="data-table compact-table approval-logo-meta">
+        <tr>
+            {% if artwork.logo_size_status %}<th>Logo Size</th><td>{{ artwork.logo_size_status }}</td>{% endif %}
+            {% if artwork.brand_text_status %}<th>Brand Text</th><td>{{ artwork.brand_text_status }}</td>{% endif %}
+            {% if artwork.r_mark_status %}<th>R Mark</th><td>{{ artwork.r_mark_status }}</td>{% endif %}
+            {% if artwork.number_of_colors %}<th>Colors</th><td>{{ artwork.number_of_colors }}</td>{% endif %}
+        </tr>
+    </table>
+    {% endif %}
+
+    <div class="logo-picker logo-picker-readonly logo-picker-compact">
+        {% for item in logo_tiles %}
+        {% with tmpl=item.template %}
+        <div class="logo-tile {% if item.status == 'Okay' %}selected{% elif item.status == 'N/A' %}na{% endif %}">
+            <div class="logo-tile-select" style="cursor:default;">
+                {% if item.status == 'Okay' %}<span class="logo-tile-check" aria-hidden="true">✓</span>{% endif %}
+                {% if tmpl.icon %}
+                <img src="{% url 'logo-template-icon' tmpl.id %}" alt="{{ tmpl.name }}" class="logo-tile-img">
+                {% else %}
+                <span class="logo-placeholder">{{ tmpl.name|slice:":2"|upper }}</span>
+                {% endif %}
+                <span class="logo-tile-name">{{ tmpl.name }}</span>
+                <span class="badge {% if item.status == 'Okay' %}badge-completed{% elif item.status == 'N/A' %}badge-draft{% else %}badge-pending{% endif %}">
+                    {{ item.status|default:"Not set" }}
+                </span>
+            </div>
+            {% if item.colors %}<small class="logo-tile-colors">{{ item.colors }}</small>{% endif %}
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<p class="text-muted">No logo templates configured.</p>
+{% endif %}

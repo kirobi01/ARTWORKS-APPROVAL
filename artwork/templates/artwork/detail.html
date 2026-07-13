@@ -1,0 +1,117 @@
+{% extends 'artwork/base.html' %}
+{% block title %}{{ artwork.artwork_no }}{% endblock %}
+{% block page_title %}{{ artwork.artwork_no }}{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">{% if artwork.product_name %}{{ artwork.product_name }}{% else %}Untitled draft{% endif %}{% if artwork.sku_size %} · {{ artwork.sku_size }}{% endif %}</p>
+{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title-lg">{% if artwork.product_name %}{{ artwork.product_name }}{% else %}Untitled draft{% endif %}</h2>
+            <p class="card-subtitle">{{ artwork.artwork_no }} · {{ artwork.sku_size }}</p>
+        </div>
+        <div class="btn-group btn-group--tight">
+            <span class="badge {% if artwork.status == 'Draft' %}badge-draft{% elif 'Completed' in artwork.status %}badge-completed{% elif 'Revision' in artwork.status %}badge-revision{% else %}badge-pending{% endif %}">{{ artwork.status }}</span>
+            {% if artwork.status == 'Completed / Approved' %}
+            <a href="{% url 'download-artwork-pdf' artwork.artwork_no %}" class="btn btn-primary">Download PDF</a>
+            {% if not artwork.sap_material_description or not artwork.sap_material_code %}
+            <a href="{% url 'procurement' artwork.artwork_no %}" class="btn btn-outline">Add SAP Details</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if artwork.primary_attachment and artwork.primary_attachment.file_type == 'artwork_image' %}
+<div class="artwork-hero">
+    <img src="{% url 'attachment-preview' artwork.artwork_no artwork.primary_attachment.id %}"
+         onclick="openImagePreview('{% url 'attachment-preview' artwork.artwork_no artwork.primary_attachment.id %}')">
+    <p class="zoom-hint">Click to zoom</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Details</h3>
+    <div class="table-wrap">
+        <table class="data-table">
+            <tr><th>Created By</th><td>{{ artwork.created_by.get_full_name|default:artwork.created_by.username }}</td><th>Date</th><td>{{ artwork.date_created|date:"d M Y H:i" }}</td></tr>
+            <tr><th>Revision</th><td>{{ artwork.revision_count }}</td><th>Reason</th><td>{{ artwork.reason_for_update }}</td></tr>
+        </table>
+    </div>
+</div>
+
+{% with selected_logos=artwork.logo_checks.all %}
+{% if selected_logos or artwork.logo_size_status or artwork.brand_text_status %}
+<details class="form-section approval-collapsible">
+    <summary>Logo Checks</summary>
+    <div class="form-section-body">
+        {% if artwork.logo_size_status or artwork.brand_text_status or artwork.r_mark_status or artwork.number_of_colors %}
+        <table class="data-table compact-table">
+            <tr>
+                {% if artwork.logo_size_status %}<th>Logo Size</th><td>{{ artwork.logo_size_status }}</td>{% endif %}
+                {% if artwork.brand_text_status %}<th>Brand Text</th><td>{{ artwork.brand_text_status }}</td>{% endif %}
+                {% if artwork.r_mark_status %}<th>R Mark</th><td>{{ artwork.r_mark_status }}</td>{% endif %}
+                {% if artwork.number_of_colors %}<th>Colors</th><td>{{ artwork.number_of_colors }}</td>{% endif %}
+            </tr>
+        </table>
+        {% endif %}
+        <div class="logo-picker logo-picker-readonly logo-picker-compact">
+            {% for check in selected_logos %}
+            <div class="logo-tile {% if check.status == 'Okay' %}selected{% elif check.status == 'N/A' %}na{% endif %}">
+                <div class="logo-tile-select" style="cursor:default;">
+                    {% if check.logo_template_id %}
+                    <img src="{% url 'logo-template-icon' check.logo_template_id %}" alt="{{ check.logo_name }}" class="logo-tile-img">
+                    {% else %}
+                    <span class="logo-placeholder">{{ check.logo_name|slice:":2"|upper }}</span>
+                    {% endif %}
+                    <span class="logo-tile-name">{{ check.logo_name }}</span>
+                    {% if check.status %}
+                    <span class="badge {% if check.status == 'Okay' %}badge-completed{% else %}badge-draft{% endif %}">{{ check.status }}</span>
+                    {% endif %}
+                </div>
+                {% if check.colors_used %}<small class="logo-tile-colors">{{ check.colors_used }}</small>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</details>
+{% endif %}
+{% endwith %}
+
+{% if has_color_section %}
+<details class="form-section approval-collapsible" open>
+    <summary>Color Specifications</summary>
+    <div class="form-section-body">
+        {% if artwork.ingredients %}
+        <h4 class="approval-subheading">Ingredients</h4>
+        <p class="ingredients-block">{{ artwork.ingredients|linebreaks }}</p>
+        {% endif %}
+        {% if has_color_specs %}
+        {% include 'artwork/includes/color_specs_readonly.html' %}
+        {% endif %}
+    </div>
+</details>
+{% endif %}
+
+<div class="card">
+    <h3>Approval Timeline</h3>
+    <ul class="timeline">
+        {% for item in approval_timeline %}
+        <li class="{{ item.status|lower }}">
+            <strong>{{ item.stage }}</strong> — {{ item.name }} ({{ item.status }})
+            {% if item.date %} — {{ item.date|date:"d M Y H:i" }}{% endif %}
+            {% if item.comments %}<br><em>{{ item.comments }}</em>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% if artwork.created_by == request.user %}
+{% if artwork.status == 'Draft' or artwork.status == 'Pending: Design Revision' %}
+<a href="{% url 'artwork-edit' artwork.artwork_no %}" class="btn btn-success btn-lg">
+    {% if artwork.status == 'Draft' %}Continue Draft{% else %}Edit &amp; Resubmit{% endif %}
+</a>
+{% endif %}
+{% endif %}
+{% endblock %}

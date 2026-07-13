@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: A4; margin: 10mm 12mm; }
+        @page artwork-landscape { size: A4 landscape; margin: 8mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #1a1a2e; line-height: 1.35; }
+
+        .doc-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+        .doc-header td { vertical-align: middle; padding: 0; }
+        .doc-header .logo-cell { width: 72px; }
+        .doc-header .logo-cell img { width: 64px; height: auto; }
+        .doc-header .title-cell { text-align: center; padding: 0 8px; }
+        .doc-header .title-cell h1 {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #0B5394;
+            letter-spacing: 0.3px;
+        }
+        .doc-header .title-cell h2 {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #CC1C24;
+            margin-top: 2px;
+        }
+        .doc-header .meta-cell {
+            width: 110px;
+            text-align: right;
+            font-size: 8pt;
+            color: #5f6368;
+        }
+        .doc-header .meta-cell strong { display: block; color: #1a1a2e; font-size: 9pt; }
+        .rule-red { height: 3px; background: #CC1C24; margin: 4px 0 2px; }
+        .rule-blue { height: 2px; background: #0B5394; margin-bottom: 10px; }
+
+        .approved-banner {
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 7px 10px;
+            border: 2px solid #0d9f6e;
+            background: #e6f7f1;
+            color: #0d5c41;
+            font-weight: bold;
+            font-size: 9.5pt;
+        }
+
+        .section-title {
+            background: #0B5394;
+            color: #fff;
+            font-weight: bold;
+            font-size: 8.5pt;
+            padding: 4px 8px;
+            margin: 10px 0 0;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        table.data {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+        table.data th,
+        table.data td {
+            border: 1px solid #c5c9d0;
+            padding: 5px 8px;
+            font-size: 8.5pt;
+            vertical-align: top;
+        }
+        table.data th {
+            background: #f3f5f8;
+            font-weight: bold;
+            width: 24%;
+            color: #333;
+        }
+        table.data td.value { width: 26%; }
+
+        .reason-block {
+            border: 1px solid #c5c9d0;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 8.5pt;
+            background: #fafbfc;
+        }
+
+        table.compact th,
+        table.compact td { font-size: 8pt; padding: 4px 6px; text-align: left; }
+        table.compact th { background: #f3f5f8; }
+
+        table.approvals th {
+            background: #CC1C24;
+            color: #fff;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .page-break { page-break-before: always; }
+
+        .artwork-page {
+            page: artwork-landscape;
+            page-break-before: always;
+            page-break-after: always;
+            min-height: 180mm;
+            display: block;
+            text-align: center;
+            padding-top: 6mm;
+        }
+        .artwork-page.portrait-page {
+            page: auto;
+            min-height: 250mm;
+        }
+        .artwork-page-label {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0B5394;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8mm;
+        }
+        .artwork-page img {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #999;
+            background: #fff;
+        }
+        .artwork-page img.fit-landscape {
+            max-width: 268mm;
+            max-height: 175mm;
+            width: auto;
+            height: auto;
+        }
+        .artwork-page img.fit-portrait {
+            max-width: 180mm;
+            max-height: 250mm;
+            width: auto;
+            height: auto;
+        }
+
+        .swatch-img { width: 36px; height: 22px; border: 1px solid #999; vertical-align: middle; }
+        .color-box { display: inline-block; width: 32px; height: 18px; border: 1px solid #999; vertical-align: middle; }
+
+        .footer-note {
+            margin-top: 12px;
+            padding-top: 6px;
+            border-top: 1px solid #ccc;
+            font-size: 7pt;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<table class="doc-header">
+    <tr>
+        <td class="logo-cell">
+            {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="Kapa">{% endif %}
+        </td>
+        <td class="title-cell">
+            <h1>KAPA OIL REFINERIES LTD</h1>
+            <h2>ARTWORK APPROVAL RECORD</h2>
+        </td>
+        <td class="meta-cell">
+            <strong>{{ artwork.artwork_no }}</strong>
+            Revision {{ artwork.revision_count }}<br>
+            {{ artwork.date_created|date:"d/m/Y" }}
+        </td>
+    </tr>
+</table>
+<div class="rule-red"></div>
+<div class="rule-blue"></div>
+
+{% if is_approved %}
+<div class="approved-banner">APPROVED — OFFICIAL ARTWORK RECORD</div>
+{% endif %}
+
+{% if artwork.reason_for_update %}
+<div class="section-title">Reason for Update</div>
+<div class="reason-block">{{ artwork.reason_for_update }}</div>
+{% endif %}
+
+{% if product_detail_rows %}
+<div class="section-title">Product Details</div>
+<table class="data">
+    {% for left, right in product_detail_pairs %}
+    <tr>
+        <th>{{ left.0 }}</th>
+        <td class="value"{% if not right %} colspan="3"{% endif %}>{{ left.1 }}</td>
+        {% if right %}
+        <th>{{ right.0 }}</th>
+        <td class="value">{{ right.1 }}</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if product_logo_rows %}
+<div class="section-title">Product Logo Checks</div>
+<table class="data compact">
+    <tr>
+        {% for label, value in product_logo_rows %}
+        <th>{{ label }}</th>
+        {% endfor %}
+    </tr>
+    <tr>
+        {% for label, value in product_logo_rows %}
+        <td style="text-align:center;">{{ value }}</td>
+        {% endfor %}
+    </tr>
+</table>
+{% endif %}
+
+{% if logo_check_entries %}
+<div class="section-title">Artwork Logo Checks</div>
+<table class="data compact">
+    <tr>
+        <th>Logo / Symbol</th>
+        <th>Status</th>
+        <th>Colors Used</th>
+    </tr>
+    {% for check in logo_check_entries %}
+    <tr>
+        <td>{{ check.logo_name }}</td>
+        <td style="text-align:center;">{{ check.status }}</td>
+        <td>{{ check.colors_used }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if text_check_rows %}
+<div class="section-title">Artwork Text Checks</div>
+<table class="data">
+    {% for left, right in text_check_pairs %}
+    <tr>
+        <th>{{ left.0 }}</th>
+        <td class="value">{{ left.1 }}</td>
+        {% if right %}
+        <th>{{ right.0 }}</th>
+        <td class="value">{{ right.1 }}</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if primary_b64 %}
+<div class="artwork-page {% if artwork_layout.orientation != 'landscape' %}portrait-page{% endif %}">
+    <div class="artwork-page-label">Main Artwork — {{ artwork.artwork_no }}</div>
+    <img src="data:{{ primary_mime|default:'image/jpeg' }};base64,{{ primary_b64 }}" alt="Main artwork"
+         class="{% if artwork_layout.orientation == 'landscape' %}fit-landscape{% else %}fit-portrait{% endif %}">
+</div>
+{% endif %}
+
+<div class="page-break"></div>
+
+<table class="doc-header">
+    <tr>
+        <td class="logo-cell">
+            {% if logo_b64 %}<img src="data:image/png;base64,{{ logo_b64 }}" alt="Kapa">{% endif %}
+        </td>
+        <td class="title-cell">
+            <h1>KAPA OIL REFINERIES LTD</h1>
+            <h2>{{ artwork.artwork_no }} — Supporting Details</h2>
+        </td>
+        <td class="meta-cell">
+            {% if completed_date %}Approved {{ completed_date|date:"d/m/Y" }}{% endif %}
+        </td>
+    </tr>
+</table>
+<div class="rule-red"></div>
+<div class="rule-blue"></div>
+
+{% if artwork.ingredients %}
+<div class="section-title">Ingredients / Kapa Requirements</div>
+<div class="reason-block">{{ artwork.ingredients }}</div>
+{% endif %}
+
+{% if color_specs_data %}
+<div class="section-title">Color Specifications</div>
+<table class="data compact">
+    <tr>
+        <th>#</th>
+        <th>Color</th>
+        <th>Color Name</th>
+        <th>CMYK Values</th>
+        <th>Swatch image</th>
+    </tr>
+    {% for spec in color_specs_data %}
+    <tr>
+        <td style="text-align:center;">{{ spec.slot_number }}</td>
+        <td style="text-align:center;">
+            {% if spec.hex %}
+            <span class="color-box" style="background:{{ spec.hex }};"></span>
+            {% else %}—{% endif %}
+        </td>
+        <td>{{ spec.color_name }}</td>
+        <td>{{ spec.cmyk_values }}</td>
+        <td style="text-align:center;">
+            {% if spec.swatch_b64 %}
+            <img src="data:{{ spec.swatch_mime|default:'image/jpeg' }};base64,{{ spec.swatch_b64 }}" class="swatch-img" alt="">
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if approval_timeline %}
+<div class="section-title">Approval History</div>
+<table class="data approvals compact">
+    <tr>
+        <th>Stage</th>
+        <th>Name</th>
+        <th>Action</th>
+        <th>Date</th>
+        <th>Comments</th>
+    </tr>
+    {% for item in approval_timeline %}
+    {% if item.status != 'Pending' or item.comments %}
+    <tr>
+        <td>{{ item.stage }}</td>
+        <td>{{ item.name }}</td>
+        <td style="text-align:center;">{{ item.status }}</td>
+        <td>{% if item.date %}{{ item.date|date:"d/m/Y" }}{% else %}—{% endif %}</td>
+        <td>{{ item.comments|truncatechars:80 }}</td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if procurement_rows %}
+<div class="section-title">Procurement / SAP</div>
+<table class="data">
+    {% for left, right in procurement_pairs %}
+    <tr>
+        <th>{{ left.0 }}</th>
+        <td class="value" colspan="{% if right %}1{% else %}3{% endif %}">{{ left.1 }}</td>
+        {% if right %}
+        <th>{{ right.0 }}</th>
+        <td class="value">{{ right.1 }}</td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<div class="footer-note">
+    Kapa Oil Refineries Ltd — Artwork Approval System — {{ artwork.artwork_no }} — Revision {{ artwork.revision_count }}
+    {% if is_approved %} — Digitally generated approved record{% endif %}
+</div>
+
+</body>
+</html>

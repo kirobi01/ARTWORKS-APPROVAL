@@ -1,0 +1,83 @@
+{% extends 'artwork/base.html' %}
+{% block title %}Logo Library{% endblock %}
+{% block page_title %}Logo Library{% endblock %}
+{% block content %}
+
+<div class="card">
+    <p class="logo-picker-help" style="margin:0;">
+        Upload logos once here — every designer can click them when creating artwork.
+        No admin access needed.
+    </p>
+</div>
+
+<div class="card">
+    <h3>Add New Logo</h3>
+    <form method="post" enctype="multipart/form-data" class="logo-add-form">
+        {% csrf_token %}
+        {% if form.errors %}
+        <div class="form-errors-box">
+            <ul>{% for field, errors in form.errors.items %}<li>{{ field }}: {{ errors|join:", " }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        <div class="form-grid form-grid-3">
+            <div class="form-group">
+                <label for="id_name">Logo name</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="id_icon">Logo image</label>
+                {{ form.icon }}
+                <p class="text-muted">PNG, JPG, GIF, WebP or SVG — max 5 MB</p>
+            </div>
+            <div class="form-group logo-add-actions">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary btn-lg">Save Logo</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Saved Logos ({{ logos|length }})</h3>
+    {% if logos %}
+    <div class="logo-library-grid">
+        {% for logo in logos %}
+        <div class="logo-library-item {% if not logo.is_active %}logo-library-inactive{% endif %}">
+            <div class="logo-library-thumb">
+                {% if logo.icon %}
+                <img src="{% url 'logo-template-icon' logo.id %}" alt="{{ logo.name }}">
+                {% else %}
+                <span class="logo-placeholder">{{ logo.name|slice:":2"|upper }}</span>
+                {% endif %}
+            </div>
+            <div class="logo-library-meta">
+                <strong>{{ logo.name }}</strong>
+                {% if logo.is_active %}
+                <span class="badge badge-completed">Active</span>
+                {% else %}
+                <span class="badge badge-pending">Hidden</span>
+                {% endif %}
+            </div>
+            <div class="logo-library-actions">
+                <a href="{% url 'logo-library-edit' logo.id %}" class="btn btn-outline btn-sm">Edit</a>
+                <form method="post" action="{% url 'logo-library-toggle' logo.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-sm">
+                        {% if logo.is_active %}Hide{% else %}Show{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No logos yet. Add your first logo above — e.g. Halal, KEBS, Recycling.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="btn-group">
+    <a href="{% url 'artwork-create' %}" class="btn btn-primary">Create Artwork →</a>
+</div>
+{% endblock %}
