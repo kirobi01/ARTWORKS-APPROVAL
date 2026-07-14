@@ -6,6 +6,37 @@ networks:
     driver: bridge
 
 services:
+  # Private Artwork-only Postgres — does NOT touch the host Postgres
+  db:
+    image: postgres:16-alpine
+    container_name: artwork-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: artwork
+      POSTGRES_USER: artwork
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - artwork_net
+    volumes:
+      - artwork_pg_data:/var/lib/postgresql/data
+    # Not published on the host — host Postgres on 5432 stays untouched
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U artwork -d artwork"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   redis:
     image: redis:7-alpine
     container_name: artwork-redis
@@ -15,7 +46,6 @@ services:
       - artwork_net
     volumes:
       - artwork_redis_data:/data
-    # Not published on the host — only this compose stack can reach it
     expose:
       - "6379"
     logging:
@@ -37,6 +67,10 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: artwork
+      DB_USER: artwork
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     extra_hosts:
@@ -47,7 +81,10 @@ services:
       - artwork_static:/app/staticfiles
       - artwork_media:/app/media
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     expose:
       - "8000"
     logging:
@@ -68,6 +105,10 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: artwork
+      DB_USER: artwork
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     extra_hosts:
@@ -77,8 +118,12 @@ services:
     volumes:
       - artwork_media:/app/media
     depends_on:
-      - redis
-      - web
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      web:
+        condition: service_started
     command: celery -A config.celery worker -l info --concurrency=2
     logging:
       driver: json-file
@@ -98,6 +143,10 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: artwork
+      DB_USER: artwork
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     extra_hosts:
@@ -105,8 +154,12 @@ services:
     networks:
       - artwork_net
     depends_on:
-      - redis
-      - worker
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      worker:
+        condition: service_started
     command: celery -A config.celery beat -l info
     logging:
       driver: json-file
@@ -124,7 +177,6 @@ services:
     restart: unless-stopped
     networks:
       - artwork_net
-    # Distinct host port so it won't fight other apps on 80/443/8000/8005
     ports:
       - "8027:80"
     volumes:
@@ -144,6 +196,7 @@ services:
           memory: 128M
 
 volumes:
+  artwork_pg_data:
   artwork_redis_data:
   artwork_static:
   artwork_media:
