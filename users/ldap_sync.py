@@ -213,32 +213,52 @@ def _fetch_ldap_entries():
 
 
 def _fetch_entries_ldap3(search_filter, attrs):
+    from ldap3 import SUBTREE
+
     server = ldap3.Server(settings.LDAP_SERVER_URI, connect_timeout=30, get_info=ldap3.NONE)
+    bind_dn = (settings.LDAP_BIND_DN or '').strip()
+    bind_pw = settings.LDAP_PASSWORD or ''
+    if not bind_dn or not bind_pw:
+        raise _LDAPSyncError('LDAP_BIND_DN and LDAP_PASSWORD must be configured in environment.')
+
     try:
         conn = ldap3.Connection(
             server,
-            user=settings.LDAP_BIND_DN,
-            password=settings.LDAP_PASSWORD,
+            user=bind_dn,
+            password=bind_pw,
             auto_bind=True,
-            receive_timeout=30,
+            receive_timeout=60,
+            auto_referrals=False,
         )
     except LDAPBindError as exc:
-        raise _LDAPSyncError('Invalid LDAP service account credentials.') from exc
+        raise _LDAPSyncError(
+            'Invalid LDAP service account credentials. '
+            'If the password contains # or $, wrap it in double quotes in .env.'
+        ) from exc
     except LDAPSocketOpenError as exc:
         raise _LDAPSyncError(f'LDAP server unreachable at {settings.LDAP_SERVER_URI}.') from exc
     except LDAPException as exc:
         raise _LDAPSyncError(f'LDAP connection failed: {exc}') from exc
 
     try:
-        conn.search(settings.LDAP_BASE_DN, search_filter, attributes=attrs)
         entries = []
-        for entry in conn.entries:
+        for entry in conn.extend.standard.paged_search(
+            search_base=settings.LDAP_BASE_DN,
+            search_filter=search_filter,
+            search_scope=SUBTREE,
+            attributes=attrs,
+            paged_size=500,
+            generator=True,
+        ):
+            if entry.get('type') != 'searchResEntry':
+                continue
+            raw_attrs = entry.get('attributes') or {}
             data = {}
             for attr in attrs:
-                if hasattr(entry, attr) and getattr(entry, attr).value is not None:
-                    val = getattr(entry, attr).value
-                    data[attr] = [str(val)] if not isinstance(val, list) else [str(v) for v in val]
-            entries.append((entry.entry_dn, data))
+                if attr in raw_attrs and raw_attrs[attr] is not None:
+                    val = raw_attrs[attr]
+                    data[attr] = [str(v) for v in val] if isinstance(val, list) else [str(val)]
+            entries.append((entry.get('dn'), data))
         return entries
     except LDAPException as exc:
         raise _LDAPSyncError(f'LDAP search failed: {exc}') from exc

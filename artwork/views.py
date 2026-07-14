@@ -189,10 +189,7 @@ def login_view(request):
             login(request, user)
             return redirect('dashboard')
         if ldap_enabled:
-            error = (
-                'Invalid username or password. Use your Kapa AD (Windows) credentials. '
-                'If this persists, contact IT — LDAP may be unreachable from this machine.'
-            )
+            error = 'Invalid username or password.'
         else:
             error = 'Invalid username or password.'
     return render(request, 'artwork/login.html', {

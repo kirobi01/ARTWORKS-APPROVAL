@@ -1,10 +1,12 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from django.urls import path
+from django.shortcuts import redirect
+from django.urls import path, reverse
 
 from .models import Profile, Role, LDAPSyncLog
 from . import admin_views
+from .ldap_sync import run_ldap_sync
 
 
 @admin.register(LDAPSyncLog)
@@ -39,12 +41,47 @@ class UserAdmin(BaseUserAdmin):
     inlines = [ProfileInline]
     list_display = ['username', 'email', 'first_name', 'last_name', 'department_display', 'is_staff', 'is_active']
     list_filter = ['is_staff', 'is_superuser', 'is_active', 'groups']
+    change_list_template = 'admin/auth/user/change_list.html'
 
     @admin.display(description='Department')
     def department_display(self, obj):
         if hasattr(obj, 'profile'):
             return obj.profile.department or '—'
         return '—'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                'sync-ad/',
+                self.admin_site.admin_view(self.sync_ad_users_view),
+                name='auth_user_sync_ad',
+            ),
+        ]
+        return custom + urls
+
+    def sync_ad_users_view(self, request):
+        """One-click AD sync from the Users list."""
+        if request.method != 'POST':
+            return redirect('admin:sync_ldap_users')
+
+        result = run_ldap_sync(
+            dry_run=False,
+            update_existing=True,
+            verbose=False,
+            triggered_by=request.user,
+            log_model=True,
+        )
+        level = messages.SUCCESS if result.success else messages.ERROR
+        messages.add_message(request, level, result.message)
+        if result.success:
+            messages.info(
+                request,
+                f'LDAP entries: {result.total_ldap_entries}. '
+                f'Created {result.created}, updated {result.updated}, '
+                f'skipped {result.skipped}, errors {result.errors}.'
+            )
+        return redirect(reverse('admin:auth_user_changelist'))
 
 
 @admin.register(Profile)
@@ -90,7 +127,6 @@ _original_each_context = admin.site.each_context
 def _each_context_with_sync(request):
     context = _original_each_context(request)
     try:
-        from users.models import LDAPSyncLog
         context['last_sync'] = LDAPSyncLog.objects.first()
     except Exception:
         context['last_sync'] = None
@@ -99,9 +135,6 @@ def _each_context_with_sync(request):
 
 admin.site.each_context = _each_context_with_sync
 
-# Customize admin branding
 admin.site.site_header = 'Kapa Oil Refineries — Artwork Administration'
 admin.site.site_title = 'Kapa Artwork Admin'
 admin.site.index_title = 'System Management'
-
-# Add link on admin index via template override (templates/admin/index.html)
