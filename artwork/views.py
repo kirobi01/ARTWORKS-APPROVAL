@@ -174,6 +174,10 @@ def _build_color_slots_data(artwork=None, post_data=None):
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+    from django.conf import settings
+    from users.ldap_client import ldap_is_available
+
+    ldap_enabled = bool(getattr(settings, 'LDAP_ENABLED', False) and ldap_is_available())
     error = None
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
@@ -184,15 +188,17 @@ def login_view(request):
         if user:
             login(request, user)
             return redirect('dashboard')
-        from django.conf import settings
-        if getattr(settings, 'LDAP_ENABLED', False):
+        if ldap_enabled:
             error = (
                 'Invalid username or password. Use your Kapa AD (Windows) credentials. '
                 'If this persists, contact IT — LDAP may be unreachable from this machine.'
             )
         else:
             error = 'Invalid username or password.'
-    return render(request, 'artwork/login.html', {'error': error})
+    return render(request, 'artwork/login.html', {
+        'error': error,
+        'ldap_enabled': ldap_enabled,
+    })
 
 
 @login_required

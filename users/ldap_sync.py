@@ -9,14 +9,25 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from users.ldap_client import ldap_is_available
 from users.models import Profile
 
 logger = logging.getLogger('users')
 
 try:
-    import ldap  # type: ignore
+    import ldap3
+    from ldap3.core.exceptions import LDAPBindError, LDAPException, LDAPSocketOpenError
+    LDAP3_AVAILABLE = True
 except Exception:
-    ldap = None
+    ldap3 = None
+    LDAP3_AVAILABLE = False
+
+try:
+    import ldap as python_ldap  # type: ignore
+    PYTHON_LDAP_AVAILABLE = True
+except Exception:
+    python_ldap = None
+    PYTHON_LDAP_AVAILABLE = False
 
 
 @dataclass
@@ -54,8 +65,8 @@ def run_ldap_sync(
     """Sync AD users into Django User + Profile. Returns LDAPSyncResult."""
     result = LDAPSyncResult()
 
-    if ldap is None:
-        result.message = 'python-ldap is not installed on this server.'
+    if not ldap_is_available():
+        result.message = 'No LDAP library installed (pip install ldap3).'
         _persist_log(log_model, triggered_by, dry_run, update_existing, result)
         return result
 
@@ -64,45 +75,18 @@ def run_ldap_sync(
         _persist_log(log_model, triggered_by, dry_run, update_existing, result)
         return result
 
+    try:
+        entries = _fetch_ldap_entries()
+    except _LDAPSyncError as exc:
+        result.message = str(exc)
+        _persist_log(log_model, triggered_by, dry_run, update_existing, result)
+        return result
+
+    result.total_ldap_entries = len(entries)
     User = get_user_model()
-    conn = ldap.initialize(settings.LDAP_SERVER_URI)
-    conn.set_option(ldap.OPT_REFERRALS, 0)
-    conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 30)
-
-    try:
-        conn.simple_bind_s(settings.LDAP_BIND_DN, settings.LDAP_PASSWORD)
-    except ldap.INVALID_CREDENTIALS:
-        result.message = 'Invalid LDAP service account credentials.'
-        _persist_log(log_model, triggered_by, dry_run, update_existing, result)
-        return result
-    except ldap.SERVER_DOWN:
-        result.message = f'LDAP server unreachable at {settings.LDAP_SERVER_URI}.'
-        _persist_log(log_model, triggered_by, dry_run, update_existing, result)
-        return result
-    except Exception as exc:
-        result.message = f'LDAP connection failed: {exc}'
-        _persist_log(log_model, triggered_by, dry_run, update_existing, result)
-        return result
-
-    search_filter = '(&(objectClass=user)(objectCategory=person)(sAMAccountName=*))'
-    attrs = [
-        'sAMAccountName', 'mail', 'givenName', 'sn', 'title',
-        'displayName', 'telephoneNumber',
-    ]
-
-    try:
-        results = conn.search_s(
-            settings.LDAP_BASE_DN, ldap.SCOPE_SUBTREE, search_filter, attrs
-        )
-        result.total_ldap_entries = len(results)
-    except Exception as exc:
-        conn.unbind_s()
-        result.message = f'LDAP search failed: {exc}'
-        _persist_log(log_model, triggered_by, dry_run, update_existing, result)
-        return result
-
     processed = 0
-    for dn, entry_attrs in results:
+
+    for dn, entry_attrs in entries:
         if not entry_attrs:
             result.skipped += 1
             continue
@@ -201,15 +185,90 @@ def run_ldap_sync(
             result.log_lines.append(f'ERROR {username}: {exc}')
             logger.exception('LDAP sync error for %s', username)
 
-    conn.unbind_s()
     result.success = result.errors == 0
     prefix = '[DRY RUN] ' if dry_run else ''
     result.message = (
-        f"{prefix}Sync complete — created {result.created}, "
-        f"updated {result.updated}, skipped {result.skipped}, errors {result.errors}"
+        f'{prefix}Sync complete — created {result.created}, '
+        f'updated {result.updated}, skipped {result.skipped}, errors {result.errors}'
     )
     _persist_log(log_model, triggered_by, dry_run, update_existing, result)
     return result
+
+
+class _LDAPSyncError(Exception):
+    """Raised when LDAP connection/search fails during sync."""
+
+
+def _fetch_ldap_entries():
+    """Return list of (dn, attrs_dict) from AD. Prefers ldap3."""
+    search_filter = '(&(objectClass=user)(objectCategory=person)(sAMAccountName=*))'
+    attrs = [
+        'sAMAccountName', 'mail', 'givenName', 'sn', 'title',
+        'displayName', 'telephoneNumber',
+    ]
+
+    if LDAP3_AVAILABLE:
+        return _fetch_entries_ldap3(search_filter, attrs)
+    return _fetch_entries_python_ldap(search_filter, attrs)
+
+
+def _fetch_entries_ldap3(search_filter, attrs):
+    server = ldap3.Server(settings.LDAP_SERVER_URI, connect_timeout=30, get_info=ldap3.NONE)
+    try:
+        conn = ldap3.Connection(
+            server,
+            user=settings.LDAP_BIND_DN,
+            password=settings.LDAP_PASSWORD,
+            auto_bind=True,
+            receive_timeout=30,
+        )
+    except LDAPBindError as exc:
+        raise _LDAPSyncError('Invalid LDAP service account credentials.') from exc
+    except LDAPSocketOpenError as exc:
+        raise _LDAPSyncError(f'LDAP server unreachable at {settings.LDAP_SERVER_URI}.') from exc
+    except LDAPException as exc:
+        raise _LDAPSyncError(f'LDAP connection failed: {exc}') from exc
+
+    try:
+        conn.search(settings.LDAP_BASE_DN, search_filter, attributes=attrs)
+        entries = []
+        for entry in conn.entries:
+            data = {}
+            for attr in attrs:
+                if hasattr(entry, attr) and getattr(entry, attr).value is not None:
+                    val = getattr(entry, attr).value
+                    data[attr] = [str(val)] if not isinstance(val, list) else [str(v) for v in val]
+            entries.append((entry.entry_dn, data))
+        return entries
+    except LDAPException as exc:
+        raise _LDAPSyncError(f'LDAP search failed: {exc}') from exc
+    finally:
+        conn.unbind()
+
+
+def _fetch_entries_python_ldap(search_filter, attrs):
+    conn = python_ldap.initialize(settings.LDAP_SERVER_URI)
+    conn.set_option(python_ldap.OPT_REFERRALS, 0)
+    conn.set_option(python_ldap.OPT_NETWORK_TIMEOUT, 30)
+
+    try:
+        conn.simple_bind_s(settings.LDAP_BIND_DN, settings.LDAP_PASSWORD)
+    except python_ldap.INVALID_CREDENTIALS as exc:
+        raise _LDAPSyncError('Invalid LDAP service account credentials.') from exc
+    except python_ldap.SERVER_DOWN as exc:
+        raise _LDAPSyncError(f'LDAP server unreachable at {settings.LDAP_SERVER_URI}.') from exc
+    except Exception as exc:
+        raise _LDAPSyncError(f'LDAP connection failed: {exc}') from exc
+
+    try:
+        results = conn.search_s(
+            settings.LDAP_BASE_DN, python_ldap.SCOPE_SUBTREE, search_filter, attrs
+        )
+        return [(dn, entry_attrs) for dn, entry_attrs in results if entry_attrs]
+    except Exception as exc:
+        raise _LDAPSyncError(f'LDAP search failed: {exc}') from exc
+    finally:
+        conn.unbind_s()
 
 
 def _persist_log(log_model, triggered_by, dry_run, update_existing, result):
@@ -232,7 +291,7 @@ def _persist_log(log_model, triggered_by, dry_run, update_existing, result):
 
 
 def _decode(attrs, key):
-    for attr_key in (key, key.encode()):
+    for attr_key in (key, key.encode() if isinstance(key, str) else key):
         if attr_key in attrs and attrs[attr_key]:
             val = attrs[attr_key][0]
             if isinstance(val, bytes):

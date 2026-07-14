@@ -1,0 +1,149 @@
+# Isolated Compose project — won't clash with other stacks on 10.0.0.27
+name: artwork
+
+networks:
+  artwork_net:
+    driver: bridge
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: artwork-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --save 60 1
+    networks:
+      - artwork_net
+    volumes:
+      - artwork_redis_data:/data
+    # Not published on the host — only this compose stack can reach it
+    expose:
+      - "6379"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  web:
+    build: .
+    image: artwork-approval:latest
+    container_name: artwork-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - artwork_net
+    volumes:
+      - artwork_static:/app/staticfiles
+      - artwork_media:/app/media
+    depends_on:
+      - redis
+    expose:
+      - "8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  worker:
+    image: artwork-approval:latest
+    container_name: artwork-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - artwork_net
+    volumes:
+      - artwork_media:/app/media
+    depends_on:
+      - redis
+      - web
+    command: celery -A config.celery worker -l info --concurrency=2
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  beat:
+    image: artwork-approval:latest
+    container_name: artwork-beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - artwork_net
+    depends_on:
+      - redis
+      - worker
+    command: celery -A config.celery beat -l info
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: artwork-nginx
+    restart: unless-stopped
+    networks:
+      - artwork_net
+    # Distinct host port so it won't fight other apps on 80/443/8000/8005
+    ports:
+      - "8027:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - artwork_static:/app/staticfiles:ro
+      - artwork_media:/app/media:ro
+    depends_on:
+      - web
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  artwork_redis_data:
+  artwork_static:
+  artwork_media:

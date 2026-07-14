@@ -270,3 +270,19 @@ html, body {
 
 }
 
+
+
+.login-subtitle {
+
+    margin: 0 0 20px;
+
+    text-align: center;
+
+    font-size: 0.8125rem;
+
+    line-height: 1.45;
+
+    color: #5c6578;
+
+}
+

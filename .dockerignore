@@ -1,0 +1,32 @@
+# Git / IDE
+.git
+.gitignore
+.idea
+.vscode
+.codegpt
+
+# Python / local envs
+venv
+.venv
+.virtualenvs
+__pycache__
+*.py[cod]
+*.egg-info
+
+# Secrets & local runtime
+.env
+*.pem
+credentials.json
+db.sqlite3
+*.log
+
+# Generated / media (mounted as volumes in compose)
+staticfiles
+media
+artwork_chunks
+
+# Docs / local scripts not needed in image
+*.md
+*.bat
+*.ps1
+"3.1 psycopg2-binary"
