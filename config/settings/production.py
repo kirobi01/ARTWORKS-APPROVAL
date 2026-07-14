@@ -18,6 +18,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 SERVE_MEDIA_PUBLICLY = False
 
+# Production mail: real SMTP recipients only (never the development redirect backend)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+DEV_EMAIL_OVERRIDE = None
+
 if USE_S3:
     INSTALLED_APPS += ['storages']  # noqa: F405
     STORAGES = {
