@@ -22,6 +22,19 @@ def find_users_by_username(username):
     return User.objects.filter(username__iexact=normalized).order_by('pk')
 
 
+def find_users_by_login_id(login_id):
+    """Match username, Django email, or profile email (case-insensitive)."""
+    User = get_user_model()
+    normalized = normalize_username(login_id)
+    if not normalized:
+        return User.objects.none()
+    return User.objects.filter(
+        Q(username__iexact=normalized)
+        | Q(email__iexact=normalized)
+        | Q(profile__email__iexact=normalized)
+    ).distinct().order_by('pk')
+
+
 def pick_canonical_user(users):
     """Choose the account to keep when multiple usernames match case-insensitively."""
     users = list(users)
@@ -156,19 +169,15 @@ def deduplicate_users(*, dry_run=False):
 
 def get_user_for_authentication(username):
     """
-    Resolve a single user for login. Deduplicates on the fly if duplicates exist.
+    Resolve a single user for login by username or email.
+    Deduplicates on the fly if duplicates exist.
     Never raises MultipleObjectsReturned.
     """
-    users = list(find_users_by_username(username))
+    users = list(find_users_by_login_id(username))
     if not users:
         return None
     if len(users) == 1:
-        user = users[0]
-        normalized = normalize_username(username)
-        if user.username != normalized:
-            user.username = normalized
-            user.save(update_fields=['username'])
-        return user
+        return users[0]
 
     canonical = pick_canonical_user(users)
     logger.warning(

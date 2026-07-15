@@ -11,7 +11,7 @@ from users.ldap_client import authenticate_ad_user, decode_ldap_attrs, ldap_is_a
 
 
 class FlexibleUsernameBackend(ModelBackend):
-    """Case-insensitive username lookup for local Django accounts."""
+    """Case-insensitive username or email lookup for local Django accounts."""
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         if username is None:
@@ -42,19 +42,26 @@ class LDAPAuthenticationBackend:
             logger.error('LDAP is enabled but ldap3/python-ldap is not installed')
             return None
 
-        username = normalize_username(username)
-        user_dn, attrs = authenticate_ad_user(username, password)
+        login_id = normalize_username(username)
+        user_dn, attrs = authenticate_ad_user(login_id, password)
         if not user_dn:
             return None
 
-        return self._get_or_create_user(username, user_dn, attrs)
+        return self._get_or_create_user(login_id, user_dn, attrs)
 
-    def _get_or_create_user(self, username, ldap_dn, attrs):
+    def _get_or_create_user(self, login_id, ldap_dn, attrs):
         from users.models import Profile
 
         User = get_user_model()
-        username = normalize_username(username)
-        email = decode_ldap_attrs(attrs, 'mail') or f'{username}@kapa-oil.local'
+        sam = normalize_username(decode_ldap_attrs(attrs, 'sAMAccountName'))
+        if not sam:
+            sam = login_id.split('@', 1)[0] if '@' in login_id else login_id
+            sam = normalize_username(sam)
+
+        email = decode_ldap_attrs(attrs, 'mail') or (
+            login_id if '@' in login_id else f'{sam}@kapa-oil.local'
+        )
+        email = normalize_username(email)
         first_name = decode_ldap_attrs(attrs, 'givenName')
         last_name = decode_ldap_attrs(attrs, 'sn')
         position = decode_ldap_attrs(attrs, 'title')
@@ -67,22 +74,29 @@ class LDAPAuthenticationBackend:
             last_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
 
         user = User.objects.filter(
-            Q(username__iexact=username) | Q(profile__ldap_dn=ldap_dn)
+            Q(username__iexact=sam)
+            | Q(profile__ldap_dn=ldap_dn)
+            | Q(email__iexact=email)
+            | Q(profile__email__iexact=email)
+            | Q(email__iexact=login_id)
+            | Q(profile__email__iexact=login_id)
         ).order_by('pk').first()
 
         if user:
-            user.username = username
+            # Keep AD sAMAccountName as canonical username; never overwrite with email.
+            if user.username.lower() != sam:
+                user.username = sam
             user.email = email
-            user.first_name = first_name or username
+            user.first_name = first_name or sam
             user.last_name = last_name or ''
             user.is_active = True
             user.set_unusable_password()
             user.save()
         else:
             user = User.objects.create(
-                username=username,
+                username=sam,
                 email=email,
-                first_name=first_name or username,
+                first_name=first_name or sam,
                 last_name=last_name or '',
                 is_active=True,
             )
