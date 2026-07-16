@@ -1,5 +1,8 @@
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
+
+from users.admin import format_user_choice
 
 from .models import (
     LogoTemplate, ProductCategory, PackagingSupplier, ArtworkRequest, ArtworkLogoCheck, ArtworkColorSpec,
@@ -7,10 +10,24 @@ from .models import (
 )
 
 
+class ProductCategoryAdminForm(forms.ModelForm):
+    class Meta:
+        model = ProductCategory
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ('hod', 'deputy_hod'):
+            field = self.fields.get(field_name)
+            if field is not None:
+                field.label_from_instance = format_user_choice
+
+
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
+    form = ProductCategoryAdminForm
     list_display = [
-        'name', 'hod', 'deputy_hod', 'display_order', 'is_active', 'created_at',
+        'name', 'hod_display', 'deputy_display', 'display_order', 'is_active', 'created_at',
     ]
     list_editable = ['display_order', 'is_active']
     list_filter = ['is_active', 'hod', 'deputy_hod']
@@ -24,6 +41,14 @@ class ProductCategoryAdmin(admin.ModelAdmin):
     autocomplete_fields = ['hod', 'deputy_hod']
     fields = ['name', 'hod', 'deputy_hod', 'display_order', 'is_active']
     list_select_related = ['hod', 'deputy_hod']
+
+    @admin.display(description='Operations HOD', ordering='hod__first_name')
+    def hod_display(self, obj):
+        return format_user_choice(obj.hod) if obj.hod_id else '—'
+
+    @admin.display(description='Deputy HOD', ordering='deputy_hod__first_name')
+    def deputy_display(self, obj):
+        return format_user_choice(obj.deputy_hod) if obj.deputy_hod_id else '—'
 
 
 @admin.register(PackagingSupplier)

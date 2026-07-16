@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.contrib.admin.views.autocomplete import AutocompleteJsonView
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
@@ -7,6 +8,24 @@ from django.urls import path, reverse
 from .models import Profile, Role, LDAPSyncLog
 from . import admin_views
 from .ldap_sync import run_ldap_sync
+
+
+def format_user_choice(user):
+    """Show full name with username in admin pickers."""
+    if not user:
+        return ''
+    name = (user.get_full_name() or '').strip()
+    if name:
+        return f'{name} ({user.username})'
+    return user.username
+
+
+class UserAutocompleteJsonView(AutocompleteJsonView):
+    def serialize_result(self, obj, to_field_name):
+        return {
+            'id': str(getattr(obj, to_field_name)),
+            'text': format_user_choice(obj),
+        }
 
 
 @admin.register(LDAPSyncLog)
@@ -41,6 +60,7 @@ class UserAdmin(BaseUserAdmin):
     inlines = [ProfileInline]
     list_display = ['username', 'email', 'first_name', 'last_name', 'department_display', 'is_staff', 'is_active']
     list_filter = ['is_staff', 'is_superuser', 'is_active', 'groups']
+    search_fields = ['username', 'first_name', 'last_name', 'email']
     change_list_template = 'admin/auth/user/change_list.html'
 
     @admin.display(description='Department')
@@ -48,6 +68,9 @@ class UserAdmin(BaseUserAdmin):
         if hasattr(obj, 'profile'):
             return obj.profile.department or '—'
         return '—'
+
+    def autocomplete_view(self, request):
+        return UserAutocompleteJsonView.as_view(model_admin=self)(request)
 
     def get_urls(self):
         urls = super().get_urls()
