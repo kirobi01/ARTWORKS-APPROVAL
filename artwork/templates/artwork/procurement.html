@@ -1,10 +1,14 @@
 {% extends 'artwork/base.html' %}
 {% block title %}Procurement{% endblock %}
-{% block page_title %}Procurement — {{ artwork.artwork_no }}{% endblock %}
+{% block page_title %}Procurement{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">SAP details for artwork <strong>{{ artwork.artwork_no }}</strong></p>
+{% endblock %}
 {% block content %}
+{% include 'artwork/includes/artwork_number_banner.html' with artwork_no=artwork.artwork_no %}
 <div class="card">
     <h2>SAP Details</h2>
-    <p class="card-subtitle" style="margin-bottom:24px;">{{ artwork.product_name }}{% if artwork.sku_size %} · {{ artwork.sku_size }}{% endif %}</p>
+    <p class="card-subtitle" style="margin-bottom:24px;">{{ artwork.artwork_no }}{% if artwork.product_name %} · {{ artwork.product_name }}{% endif %}{% if artwork.sku_size %} · {{ artwork.sku_size }}{% endif %}</p>
     {% if form.errors %}
     <div class="form-errors-box" role="alert">
         <strong>Please fix the following:</strong>

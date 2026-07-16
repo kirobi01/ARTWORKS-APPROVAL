@@ -1,9 +1,13 @@
 {% extends 'artwork/base.html' %}
 {% load static %}
-{% block title %}{% if is_edit %}Edit{% else %}Create{% endif %} Artwork{% endblock %}
-{% block page_title %}{% if is_edit %}Edit {{ artwork.artwork_no }}{% else %}Create New Artwork{% endif %}{% endblock %}
+{% block title %}{% if is_edit %}{{ artwork_no }} · Edit{% else %}{{ artwork_no }} · Create{% endif %} Artwork{% endblock %}
+{% block page_title %}{% if is_edit %}Edit Artwork{% else %}Create New Artwork{% endif %}{% endblock %}
 {% block page_subtitle %}
-<p class="main-header-subtitle">{% if is_edit %}Update details, attachments, and logo checks.{% else %}Enter product information and submit for approval.{% endif %}</p>
+<p class="main-header-subtitle">
+    {% if is_edit %}Update details, attachments, and logo checks for <strong>{{ artwork_no }}</strong>.
+    {% else %}Assigned artwork number: <strong>{{ artwork_no }}</strong>. Fill in what you can, then save or submit.
+    {% endif %}
+</p>
 {% endblock %}
 {% block extra_js %}
 <script src="{% static 'artwork/js/logo_picker.js' %}"></script>
@@ -54,6 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block content %}
 <div class="card">
     {% if is_edit %}
+    {% include 'artwork/includes/artwork_number_banner.html' with artwork_no=artwork_no artwork_no_hint="This number stays with the artwork through approval." %}
+    {% else %}
+    {% include 'artwork/includes/artwork_number_banner.html' with artwork_no=artwork_no artwork_no_hint="Reserved for this new artwork — it is saved when you draft or submit." %}
+    {% endif %}
+
+    {% if is_edit %}
     <div class="card-header card-header--actions">
         <div>
             <span class="badge badge-info">{{ artwork.status }}</span>
@@ -92,6 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
+        {% if not is_edit and artwork_no %}
+        <input type="hidden" name="artwork_no" value="{{ artwork_no }}">
+        {% endif %}
 
         <datalist id="print-type-suggestions">
             <option value="Gravure">
@@ -156,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="logo-picker-help">
                     Click a logo to mark it as used on this artwork. Click again to remove.
                     Use <strong>N/A</strong> if the logo does not apply.
-                    {% if nav_is_design or user.is_superuser %}
+                    {% if nav_can_create %}
                     <a href="{% url 'logo-library' %}">Manage logos in the Logo Library →</a>
                     {% endif %}
                 </p>

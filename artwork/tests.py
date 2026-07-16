@@ -13,7 +13,16 @@ from artwork.operations_routing import (
     get_operations_assignees,
 )
 from artwork.utils import generate_artwork_number
-from artwork.views import _save_logo_checks_from_post, _get_logo_form_state, _ensure_logo_templates
+from artwork.views import (
+    _save_logo_checks_from_post,
+    _get_logo_form_state,
+    _ensure_logo_templates,
+    _can_view,
+    _can_review,
+    _can_fill_procurement,
+    _can_download_pdf,
+    _artworks_for_user,
+)
 
 
 class ArtworkWorkflowTests(TestCase):
@@ -77,11 +86,17 @@ class ArtworkDraftSaveTests(TestCase):
         self.client.force_login(self.designer)
 
     def test_save_empty_draft_succeeds(self):
-        response = self.client.post('/artwork/create/', {'action': 'save'})
+        get_page = self.client.get('/artwork/create/')
+        artwork_no = get_page.context['artwork_no']
+        response = self.client.post('/artwork/create/', {
+            'action': 'save',
+            'artwork_no': artwork_no,
+        })
         self.assertEqual(response.status_code, 302)
         draft = ArtworkRequest.objects.get(created_by=self.designer)
         self.assertEqual(draft.status, 'Draft')
         self.assertEqual(draft.product_name, '')
+        self.assertEqual(draft.artwork_no, artwork_no)
         self.assertIn('/artwork/edit/', response.url)
 
     def test_save_draft_with_fields_persists(self):
@@ -166,6 +181,92 @@ class ArtworkDraftSaveTests(TestCase):
         self.assertEqual(draft.barcode, '4006381333931')
 
 
+class DesignTeamCollaborationTests(TestCase):
+    def setUp(self):
+        Group.objects.get_or_create(name='DESIGN')
+        Group.objects.get_or_create(name='MARKETING_SALES')
+        design = Group.objects.get(name='DESIGN')
+        self.designer_a = User.objects.create_user('designer_a', password='pass')
+        self.designer_b = User.objects.create_user('designer_b', password='pass')
+        self.marketer = User.objects.create_user('marketer', password='pass')
+        self.designer_a.groups.add(design)
+        self.designer_b.groups.add(design)
+        self.marketer.groups.add(Group.objects.get(name='MARKETING_SALES'))
+        self.teammate_draft = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='Teammate Draft',
+            created_by=self.designer_a,
+            status='Draft',
+        )
+        self.client = Client()
+
+    def test_designer_sees_teammate_drafts(self):
+        self.client.force_login(self.designer_b)
+        response = self.client.get('/artwork/drafts/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Teammate Draft')
+        self.assertContains(response, 'Continue')
+
+    def test_designer_can_edit_teammate_draft(self):
+        self.client.force_login(self.designer_b)
+        response = self.client.post(
+            f'/artwork/edit/{self.teammate_draft.artwork_no}/',
+            {'action': 'save', 'product_name': 'Updated By Teammate'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.teammate_draft.refresh_from_db()
+        self.assertEqual(self.teammate_draft.product_name, 'Updated By Teammate')
+        self.assertEqual(self.teammate_draft.created_by, self.designer_a)
+
+    def test_designer_can_view_teammate_draft_detail(self):
+        self.client.force_login(self.designer_b)
+        response = self.client.get(
+            f'/artwork/{self.teammate_draft.artwork_no}/detail/'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['can_edit'])
+        self.assertContains(response, 'Continue Draft')
+
+    def test_marketer_cannot_create_or_edit_draft(self):
+        self.client.force_login(self.marketer)
+        self.assertEqual(self.client.get('/artwork/create/').status_code, 403)
+        self.assertEqual(
+            self.client.get(
+                f'/artwork/edit/{self.teammate_draft.artwork_no}/'
+            ).status_code,
+            403,
+        )
+
+    def test_pending_excludes_drafts_for_design(self):
+        self.client.force_login(self.designer_b)
+        response = self.client.get('/artwork/pending/')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Teammate Draft')
+
+    def test_design_revision_lives_on_drafts_not_pending(self):
+        revision = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='Needs Revision',
+            created_by=self.designer_a,
+            status='Pending: Design Revision',
+        )
+        self.client.force_login(self.designer_b)
+        drafts = self.client.get('/artwork/drafts/')
+        self.assertEqual(drafts.status_code, 200)
+        self.assertContains(drafts, 'Needs Revision')
+        self.assertContains(drafts, 'Edit')
+        pending = self.client.get('/artwork/pending/')
+        self.assertEqual(pending.status_code, 200)
+        self.assertNotContains(pending, 'Needs Revision')
+        # Designer can still open and edit the revision
+        detail = self.client.get(f'/artwork/{revision.artwork_no}/detail/')
+        self.assertEqual(detail.status_code, 200)
+        self.assertTrue(detail.context['can_edit'])
+        self.assertEqual(
+            self.client.get(f'/artwork/edit/{revision.artwork_no}/').status_code,
+            200,
+        )
+
 def _test_png_file(name='kapa.png'):
     buf = io.BytesIO()
     Image.new('RGB', (8, 8), color=(204, 28, 36)).save(buf, format='PNG')
@@ -228,6 +329,13 @@ class LogoTemplateTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'logoPicker')
         self.assertContains(response, 'logo_status_')
+
+    def test_create_page_shows_reserved_artwork_number(self):
+        response = self.client.get('/artwork/create/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Artwork No')
+        self.assertRegex(response.content.decode(), r'ART-\d{4}-\d{4}')
+        self.assertContains(response, 'name="artwork_no"')
 
     def test_logo_library_page_for_designer(self):
         response = self.client.get('/artwork/logos/')
@@ -745,3 +853,235 @@ class AllApprovalStagesTests(TestCase):
         for msg in mail.outbox:
             recipients.update(msg.to)
         self.assertIn('qa@example.com', recipients)
+
+
+class AccessControlAuditTests(TestCase):
+    """Backend/frontend ACL parity: pages, list actions, and artwork visibility."""
+
+    def setUp(self):
+        for name in (
+            'DESIGN', 'MARKETING_SALES', 'QUALITY_ASSURANCE', 'OPERATIONS_HOD',
+            'PRODUCT_DEVELOPMENT', 'MILAN', 'PROCUREMENT', 'ADMIN',
+        ):
+            Group.objects.get_or_create(name=name)
+
+        self.designer = User.objects.create_user('acl_designer', password='pass')
+        self.marketer = User.objects.create_user('acl_marketer', password='pass')
+        self.qa = User.objects.create_user('acl_qa', password='pass')
+        self.procurement = User.objects.create_user('acl_procurement', password='pass')
+        self.outsider = User.objects.create_user('acl_outsider', password='pass')
+
+        self.designer.groups.add(Group.objects.get(name='DESIGN'))
+        self.marketer.groups.add(Group.objects.get(name='MARKETING_SALES'))
+        self.qa.groups.add(Group.objects.get(name='QUALITY_ASSURANCE'))
+        self.procurement.groups.add(Group.objects.get(name='PROCUREMENT'))
+
+        self.marketing_pending = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='ACL Marketing Item',
+            created_by=self.designer,
+            status='Pending: Marketing & Sales Approval',
+        )
+        self.completed = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='ACL Completed Item',
+            created_by=self.designer,
+            status='Completed / Approved',
+        )
+        self.other_completed = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='ACL Other Completed',
+            created_by=self.marketer,
+            status='Completed / Approved',
+        )
+        self.client = Client()
+
+    def test_creator_cannot_review_own_pending_stage(self):
+        self.assertFalse(_can_review(self.marketing_pending, self.designer))
+        self.assertTrue(_can_review(self.marketing_pending, self.marketer))
+        self.assertFalse(_can_review(self.marketing_pending, self.qa))
+
+    def test_my_artworks_hides_review_for_creator(self):
+        self.client.force_login(self.designer)
+        response = self.client.get('/artwork/my/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'ACL Marketing Item')
+        self.assertNotContains(response, f"/artwork/{self.marketing_pending.artwork_no}/marketing-approval/")
+        self.assertNotContains(response, '>Review<')
+
+    def test_pending_shows_review_only_for_stage_group(self):
+        self.client.force_login(self.marketer)
+        response = self.client.get('/artwork/pending/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Review')
+        self.assertContains(
+            response,
+            f"/artwork/{self.marketing_pending.artwork_no}/marketing-approval/",
+        )
+
+        self.client.force_login(self.qa)
+        response = self.client.get('/artwork/pending/')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'ACL Marketing Item')
+
+    def test_detail_hides_sap_link_for_non_procurement(self):
+        self.assertFalse(_can_fill_procurement(self.completed, self.designer))
+        self.assertTrue(_can_fill_procurement(self.completed, self.procurement))
+
+        self.client.force_login(self.designer)
+        response = self.client.get(f'/artwork/{self.completed.artwork_no}/detail/')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['can_fill_procurement'])
+        self.assertNotContains(response, 'SAP Details')
+
+        self.client.force_login(self.procurement)
+        response = self.client.get(f'/artwork/{self.completed.artwork_no}/detail/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['can_fill_procurement'])
+        self.assertContains(response, 'Add SAP Details')
+
+    def test_procurement_page_requires_group(self):
+        self.client.force_login(self.designer)
+        self.assertEqual(
+            self.client.get(f'/artwork/{self.completed.artwork_no}/procurement/').status_code,
+            403,
+        )
+        self.client.force_login(self.procurement)
+        self.assertEqual(
+            self.client.get(f'/artwork/{self.completed.artwork_no}/procurement/').status_code,
+            200,
+        )
+
+    def test_dashboard_counts_respect_visibility(self):
+        self.client.force_login(self.marketer)
+        response = self.client.get('/artwork/dashboard/')
+        self.assertEqual(response.status_code, 200)
+        # Marketer only sees own completed (+ pending marketing), not designer's completed.
+        visible = _artworks_for_user(self.marketer)
+        self.assertEqual(response.context['total_count'], visible.count())
+        self.assertEqual(
+            response.context['completed_count'],
+            visible.filter(status='Completed / Approved').count(),
+        )
+        self.assertEqual(response.context['completed_count'], 1)
+        self.assertNotEqual(
+            response.context['completed_count'],
+            ArtworkRequest.objects.filter(status='Completed / Approved').count(),
+        )
+
+    def test_status_filter_options_do_not_leak_hidden_statuses(self):
+        self.client.force_login(self.marketer)
+        response = self.client.get('/artwork/all/')
+        self.assertEqual(response.status_code, 200)
+        statuses = set(response.context['statuses'])
+        self.assertIn('Pending: Marketing & Sales Approval', statuses)
+        # Marketer did not create the designer draft statuses; completed only own.
+        self.assertNotIn('Draft', statuses)
+
+    def test_generate_artwork_number_api_requires_design(self):
+        self.client.force_login(self.marketer)
+        self.assertEqual(
+            self.client.get('/artwork/api/generate-artwork-number/').status_code,
+            403,
+        )
+        self.client.force_login(self.designer)
+        response = self.client.get('/artwork/api/generate-artwork-number/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['artwork_no'].startswith('ART-'))
+
+    def test_completed_pdf_download_matches_view_access(self):
+        self.assertTrue(_can_download_pdf(self.completed, self.designer))
+        self.assertTrue(_can_download_pdf(self.other_completed, self.marketer))
+        self.assertFalse(_can_download_pdf(self.other_completed, self.designer))
+        self.assertTrue(_can_download_pdf(self.completed, self.procurement))
+        self.assertFalse(_can_download_pdf(self.completed, self.outsider))
+
+    def test_outsider_cannot_view_others_artwork(self):
+        self.client.force_login(self.outsider)
+        self.assertEqual(
+            self.client.get(f'/artwork/{self.completed.artwork_no}/detail/').status_code,
+            403,
+        )
+        response = self.client.get('/artwork/all/')
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'ACL Completed Item')
+        self.assertEqual(response.context['artworks'], [])
+
+    def test_stage_owner_can_open_approval_page(self):
+        self.client.force_login(self.marketer)
+        response = self.client.get(
+            f'/artwork/{self.marketing_pending.artwork_no}/marketing-approval/'
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_procurement_can_reopen_filled_sap(self):
+        self.completed.sap_material_code = 'MAT-1'
+        self.completed.sap_material_description = 'Filled'
+        self.completed.save(update_fields=['sap_material_code', 'sap_material_description'])
+        self.client.force_login(self.procurement)
+        response = self.client.get(f'/artwork/{self.completed.artwork_no}/detail/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Edit SAP Details')
+        self.assertEqual(
+            self.client.get(f'/artwork/{self.completed.artwork_no}/procurement/').status_code,
+            200,
+        )
+
+    def test_ops_creator_keeps_own_artwork_in_lists(self):
+        """Ops department filter must not hide the user's own submissions."""
+        Group.objects.get_or_create(name='OPERATIONS_HOD')
+        oils_hod = User.objects.create_user('acl_oils_hod', password='pass')
+        oils_hod.groups.add(Group.objects.get(name='OPERATIONS_HOD'))
+        ProductCategory.objects.create(
+            name='Oils', hod=oils_hod, is_active=True,
+        )
+        # Own submission pending Ops under a different mapped category name.
+        own_other_dept = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='Own Cross Dept',
+            product_category='Soap',
+            created_by=oils_hod,
+            status='Pending: Operations HOD Approval',
+        )
+        ProductCategory.objects.create(
+            name='Soap',
+            hod=User.objects.create_user('acl_soap_hod', password='pass'),
+            is_active=True,
+        )
+        Group.objects.get(name='OPERATIONS_HOD')  # soap hod not in group yet
+        visible = _artworks_for_user(oils_hod)
+        self.assertTrue(visible.filter(pk=own_other_dept.pk).exists())
+        self.assertTrue(_can_view(own_other_dept, oils_hod))
+        self.client.force_login(oils_hod)
+        response = self.client.get('/artwork/all/')
+        self.assertContains(response, 'Own Cross Dept')
+        # Must not get a Review button for another department's mapped item
+        art = next(a for a in response.context['artworks'] if a.pk == own_other_dept.pk)
+        self.assertFalse(art.can_review)
+
+class DeadlineReminderNotificationTests(TestCase):
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_deadline_reminder_ccs_creator(self):
+        from django.core import mail
+
+        Group.objects.get_or_create(name='MARKETING_SALES')
+        designer = User.objects.create_user(
+            'reminder_designer', password='pass', email='creator@example.com',
+        )
+        marketer = User.objects.create_user(
+            'reminder_marketer', password='pass', email='marketer@example.com',
+        )
+        marketer.groups.add(Group.objects.get(name='MARKETING_SALES'))
+        artwork = ArtworkRequest.objects.create(
+            artwork_no=generate_artwork_number(),
+            product_name='Reminder Product',
+            created_by=designer,
+            status='Pending: Marketing & Sales Approval',
+        )
+        mail.outbox.clear()
+        ArtworkNotificationService.send_deadline_reminder(artwork, 'marketing')
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertIn('marketer@example.com', msg.to)
+        self.assertIn('creator@example.com', msg.cc)
+

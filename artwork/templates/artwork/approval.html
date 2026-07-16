@@ -1,14 +1,19 @@
 {% extends 'artwork/base.html' %}
 {% load static %}
 {% block title %}{{ stage_config.display }} Approval{% endblock %}
-{% block page_title %}{{ stage_config.display }} Review — {{ artwork.artwork_no }}{% endblock %}
+{% block page_title %}{{ stage_config.display }} Review{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">Artwork <strong>{{ artwork.artwork_no }}</strong>{% if artwork.product_name %} · {{ artwork.product_name }}{% endif %}</p>
+{% endblock %}
 {% block content %}
 
 <div class="approval-layout">
     <div class="approval-main">
+        {% include 'artwork/includes/artwork_number_banner.html' with artwork_no=artwork.artwork_no %}
         <div class="card approval-summary">
             <div class="approval-summary-grid">
-                <div><span class="summary-label">Product</span><strong>{{ artwork.product_name }}</strong></div>
+                <div><span class="summary-label">Artwork No</span><strong>{{ artwork.artwork_no }}</strong></div>
+                <div><span class="summary-label">Product</span><strong>{{ artwork.product_name|default:"—" }}</strong></div>
                 <div><span class="summary-label">Category</span><strong>{{ artwork.product_category|default:"—" }}</strong></div>
                 <div><span class="summary-label">SKU</span><strong>{{ artwork.sku_size|default:"—" }}</strong></div>
                 <div><span class="summary-label">Designer</span><strong>{{ artwork.created_by.get_full_name|default:artwork.created_by.username }}</strong></div>

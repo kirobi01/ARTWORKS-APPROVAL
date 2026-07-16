@@ -145,3 +145,6 @@ CHUNK_SIZE = 2 * 1024 * 1024  # 2 MB chunks
 
 DRAFT_STATUS = 'Draft'
 COMPLETED_STATUS = 'Completed / Approved'
+# Design work queue (editable by DESIGN) — shown under Drafts, not approval Pending.
+DESIGN_WORK_STATUSES = (DRAFT_STATUS, 'Design Created', 'Pending: Design Revision')
+

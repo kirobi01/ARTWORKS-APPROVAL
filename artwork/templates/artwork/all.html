@@ -5,14 +5,16 @@
 <p class="main-header-subtitle">Browse and manage artwork across drafts, pending review, and completed records.</p>
 {% endblock %}
 {% block page_actions %}
-{% if nav_is_design or user.is_superuser %}
+{% if nav_can_create %}
 <a href="{% url 'artwork-create' %}" class="btn btn-primary">+ New Artwork</a>
 {% endif %}
 {% endblock %}
 {% block content %}
 <div class="card">
     <nav class="list-tabs" aria-label="Artwork lists">
+        {% if nav_can_create or nav_is_admin %}
         <a href="{% url 'artwork-drafts' %}" class="list-tab {% if active_tab == 'drafts' %}active{% endif %}">Drafts</a>
+        {% endif %}
         <a href="{% url 'artwork-pending' %}" class="list-tab {% if active_tab == 'pending' %}active{% endif %}">Pending</a>
         <a href="{% url 'artwork-completed' %}" class="list-tab {% if active_tab == 'completed' %}active{% endif %}">Completed</a>
         <a href="{% url 'artwork-all' %}" class="list-tab {% if active_tab == 'all' %}active{% endif %}">All</a>
@@ -75,24 +77,23 @@
                     <td>{{ art.created_by.get_full_name|default:art.created_by.username }}</td>
                     <td>{{ art.date_created|date:"d M Y" }}</td>
                     <td class="table-actions">
-                        {% if art.status == 'Draft' and art.created_by_id == user.id %}
-                        <a href="{% url 'artwork-edit' art.artwork_no %}" class="btn btn-primary">Continue</a>
+                        {% if art.can_edit %}
+                        <a href="{% url 'artwork-edit' art.artwork_no %}" class="btn btn-primary">
+                            {% if art.status == 'Draft' %}Continue{% else %}Edit{% endif %}
+                        </a>
                         {% endif %}
                         <a href="{% url 'artwork-detail' art.artwork_no %}" class="btn btn-outline">View</a>
-                        {% if art.status == 'Completed / Approved' and show_pdf %}
+                        {% if art.can_download_pdf and show_pdf %}
                         <a href="{% url 'download-artwork-pdf' art.artwork_no %}?inline=1" target="_blank" rel="noopener" class="btn btn-outline">Preview</a>
                         <a href="{% url 'download-artwork-pdf' art.artwork_no %}" class="btn {% if pdf_primary %}btn-primary{% else %}btn-outline{% endif %}">Download</a>
                         {% endif %}
-                        {% if art.status == 'Pending: Marketing & Sales Approval' %}
-                        <a href="{% url 'marketing-approval' art.artwork_no %}" class="btn btn-success">Review</a>
-                        {% elif art.status == 'Pending: Quality Assurance Approval' %}
-                        <a href="{% url 'qa-approval' art.artwork_no %}" class="btn btn-success">Review</a>
-                        {% elif art.status == 'Pending: Operations HOD Approval' %}
-                        <a href="{% url 'operations-approval' art.artwork_no %}" class="btn btn-success">Review</a>
-                        {% elif art.status == 'Pending: Product Development Approval' %}
-                        <a href="{% url 'product-dev-approval' art.artwork_no %}" class="btn btn-success">Review</a>
-                        {% elif art.status == 'Pending: Milan Shah Approval' %}
-                        <a href="{% url 'milan-approval' art.artwork_no %}" class="btn btn-success">Review</a>
+                        {% if art.can_fill_procurement %}
+                        <a href="{% url 'procurement' art.artwork_no %}" class="btn btn-outline">
+                            {% if art.sap_material_code and art.sap_material_description %}Edit SAP{% else %}Add SAP{% endif %}
+                        </a>
+                        {% endif %}
+                        {% if art.can_review and art.review_url_name %}
+                        <a href="{% url art.review_url_name art.artwork_no %}" class="btn btn-success">Review</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -102,7 +103,7 @@
                         <div class="empty-state">
                             <div class="empty-icon">📋</div>
                             <p>No artworks in this list yet.</p>
-                            {% if active_tab == 'drafts' and nav_is_design %}
+                            {% if active_tab == 'drafts' and nav_can_create %}
                             <a href="{% url 'artwork-create' %}" class="btn btn-primary" style="margin-top:12px;">Start a new draft</a>
                             {% endif %}
                         </div>

@@ -1,0 +1,10 @@
+{# Prominent artwork number so users always know which record they are on. #}
+{% if artwork_no %}
+<div class="artwork-no-banner" role="status" aria-label="Artwork number {{ artwork_no }}">
+    <span class="artwork-no-banner-label">Artwork No</span>
+    <strong class="artwork-no-banner-value">{{ artwork_no }}</strong>
+    {% if artwork_no_hint %}
+    <span class="artwork-no-banner-hint">{{ artwork_no_hint }}</span>
+    {% endif %}
+</div>
+{% endif %}

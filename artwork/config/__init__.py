@@ -10,4 +10,5 @@ from .approval_config import (
     DEFAULT_LOGO_NAMES,
     DRAFT_STATUS,
     COMPLETED_STATUS,
+    DESIGN_WORK_STATUSES,
 )

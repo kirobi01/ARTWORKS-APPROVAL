@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'artwork/css/main.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'artwork/css/main.css' %}?v=6">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -34,9 +34,9 @@
                 </span>
                 Dashboard
             </a>
-            {% if nav_is_design or user.is_superuser %}
+            {% if nav_can_create %}
             <p class="sidebar-nav-label">Design</p>
-            <a href="{% url 'artwork-create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-create' %}active{% endif %}">
+            <a href="{% url 'artwork-create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-create' or request.resolver_match.url_name == 'artwork-edit' %}active{% endif %}">
                 <span class="sidebar-icon" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </span>
@@ -50,12 +50,14 @@
             </a>
             {% endif %}
             <p class="sidebar-nav-label">Workflow</p>
+            {% if nav_can_create or nav_is_admin %}
             <a href="{% url 'artwork-drafts' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-drafts' %}active{% endif %}">
                 <span class="sidebar-icon" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>
                 </span>
                 Drafts
             </a>
+            {% endif %}
             <a href="{% url 'artwork-pending' %}" class="sidebar-link {% if request.resolver_match.url_name == 'artwork-pending' %}active{% endif %}">
                 <span class="sidebar-icon" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>

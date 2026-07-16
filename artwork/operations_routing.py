@@ -122,6 +122,7 @@ def filter_operations_pending_queryset(queryset, user):
 
     Mapped categories are never shown to HODs from other departments.
     Unmapped categories remain visible to all OPERATIONS_HOD users.
+    A user's own submissions are always kept (matches _can_view for creators).
     """
     if not user or user.is_superuser:
         return queryset
@@ -153,4 +154,5 @@ def filter_operations_pending_queryset(queryset, user):
         unmapped = Q()
 
     allowed_ops |= unmapped
-    return queryset.filter(non_ops | (ops_rows & allowed_ops))
+    # Keep creator visibility aligned with _can_view (never hide own records).
+    return queryset.filter(Q(created_by=user) | non_ops | (ops_rows & allowed_ops))

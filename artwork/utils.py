@@ -25,6 +25,29 @@ def generate_artwork_number():
     return f'ART-{current_year}-{str(new_number).zfill(4)}'
 
 
+ARTWORK_NO_RE = re.compile(r'^ART-\d{4}-\d{4}$', re.IGNORECASE)
+
+
+def allocate_artwork_number(preferred=None):
+    """
+    Return a free artwork number.
+
+    Uses ``preferred`` when it matches ART-YYYY-NNNN and is not already taken
+    (so the create page can keep the number shown to the designer).
+    """
+    preferred = (preferred or '').strip().upper()
+    if preferred and ARTWORK_NO_RE.fullmatch(preferred):
+        if not ArtworkRequest.objects.filter(artwork_no__iexact=preferred).exists():
+            return preferred
+    for _ in range(12):
+        candidate = generate_artwork_number()
+        if not ArtworkRequest.objects.filter(artwork_no__iexact=candidate).exists():
+            return candidate
+    # Extremely unlikely fallback if many concurrent creates collide
+    stamp = timezone.now().strftime('%H%M%S')
+    return f'ART-{timezone.now().year}-{stamp[:4]}'
+
+
 def validate_upload_file(uploaded_file):
     """Validate file extension, MIME type, and size."""
     errors = []

@@ -371,5 +371,9 @@ class ArtworkNotificationService:
         ctx['approval_url'] = cls._approval_url(artwork, cfg.get('approval_url_name'))
         ctx['timeline_hours'] = cfg.get('timeline_hours', 24)
         to_emails = cls._get_stage_recipient_emails(artwork, stage_key)
+        cc = []
+        designer_email = get_user_email(artwork.created_by) if artwork.created_by else None
+        if designer_email and designer_email not in to_emails:
+            cc.append(designer_email)
         subject = f'Artwork {artwork.artwork_no} - Reminder: Pending {cfg["display"]} Approval'
-        cls._send_email(subject, 'artwork_emails/deadline_reminder.html', ctx, to_emails)
+        cls._send_email(subject, 'artwork_emails/deadline_reminder.html', ctx, to_emails, cc)

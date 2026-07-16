@@ -20,8 +20,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from .config import (
-    ARTWORK_STATUS_CONFIG, GROUP_STATUS_MAPPING, STAGE_ORDER,
-    CHUNK_SIZE, MAX_UPLOAD_SIZE, DRAFT_STATUS, COMPLETED_STATUS,
+    ARTWORK_STATUS_CONFIG, GROUP_STATUS_MAPPING, STAGE_ORDER, STATUS_TO_STAGE,
+    CHUNK_SIZE, MAX_UPLOAD_SIZE, DRAFT_STATUS, COMPLETED_STATUS, DESIGN_WORK_STATUSES,
 )
 from .color_utils import cmyk_to_hex
 from .operations_routing import (
@@ -40,7 +40,7 @@ from .models import (
 )
 from .services import ArtworkStatusManager, ArtworkNotificationService
 from .utils import (
-    generate_artwork_number, validate_upload_file, detect_file_type,
+    generate_artwork_number, allocate_artwork_number, validate_upload_file, detect_file_type,
     get_client_ip,
 )
 from .pdf_utils import (
@@ -86,12 +86,49 @@ def _can_view(artwork, user):
 
 
 def _can_edit(artwork, user):
+    """DESIGN team can edit any teammate's draft / design-stage artwork."""
     groups = _user_groups(user)
     if user.is_superuser or 'ADMIN' in groups:
         return True
-    if 'DESIGN' in groups and artwork.created_by == user:
-        return artwork.status in (DRAFT_STATUS, 'Design Created', 'Pending: Design Revision')
+    if 'DESIGN' in groups:
+        return artwork.status in DESIGN_WORK_STATUSES
     return False
+
+
+def _can_review(artwork, user):
+    """True when the user may open the approval page for this artwork's current stage."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    groups = _user_groups(user)
+    if 'ADMIN' in groups:
+        return True
+    stage_key = STATUS_TO_STAGE.get(artwork.status)
+    if not stage_key:
+        return False
+    required_group = ARTWORK_STATUS_CONFIG[stage_key].get('group')
+    if not required_group or required_group not in groups:
+        return False
+    if stage_key == 'operations_hod':
+        return user_can_approve_operations(user, artwork)
+    return True
+
+
+def _review_url_name(artwork):
+    stage_key = STATUS_TO_STAGE.get(artwork.status)
+    if not stage_key:
+        return None
+    return ARTWORK_STATUS_CONFIG[stage_key].get('approval_url_name')
+
+
+def _can_fill_procurement(artwork, user):
+    if artwork.status != COMPLETED_STATUS:
+        return False
+    if user.is_superuser:
+        return True
+    groups = _user_groups(user)
+    return bool(groups.intersection({'PROCUREMENT', 'ADMIN'}))
 
 
 def _can_download_pdf(artwork, user):
@@ -99,6 +136,23 @@ def _can_download_pdf(artwork, user):
         return _can_view(artwork, user)
     groups = _user_groups(user)
     return user.is_superuser or 'ADMIN' in groups
+
+
+def _with_action_flags(artworks, user):
+    """Attach action flags for templates; mirrors backend permission helpers."""
+    items = list(artworks)
+    for art in items:
+        art.can_edit = _can_edit(art, user)
+        art.can_review = _can_review(art, user)
+        art.review_url_name = _review_url_name(art) if art.can_review else None
+        art.can_download_pdf = _can_download_pdf(art, user)
+        art.can_fill_procurement = _can_fill_procurement(art, user)
+    return items
+
+
+def _with_edit_flags(artworks, user):
+    """Backward-compatible alias for list templates."""
+    return _with_action_flags(artworks, user)
 
 
 def _artworks_for_user(user, queryset=None):
@@ -218,16 +272,7 @@ def logout_view(request):
 def dashboard(request):
     groups = _user_groups(request.user)
     user = request.user
-    base_qs = ArtworkRequest.objects.all()
-
-    if not (user.is_superuser or 'ADMIN' in groups):
-        visible_statuses = []
-        for g in groups:
-            visible_statuses.extend(GROUP_STATUS_MAPPING.get(g, []))
-        if visible_statuses:
-            base_qs = base_qs.filter(
-                Q(status__in=visible_statuses) | Q(created_by=user)
-            )
+    visible_qs = _artworks_for_user(user)
 
     pending_statuses = set()
     for g in groups:
@@ -252,16 +297,19 @@ def dashboard(request):
         user,
     ).order_by('-date_created')[:5] if pending_statuses else []
 
+    if user.is_superuser or groups.intersection({'ADMIN', 'DESIGN'}):
+        draft_count = ArtworkRequest.objects.filter(status__in=DESIGN_WORK_STATUSES).count()
+    else:
+        draft_count = ArtworkRequest.objects.filter(
+            created_by=user, status__in=DESIGN_WORK_STATUSES,
+        ).count()
+
     context = {
         'pending_count': pending_count,
-        'completed_count': ArtworkRequest.objects.filter(
-            status=COMPLETED_STATUS
-        ).count(),
-        'draft_count': ArtworkRequest.objects.filter(
-            created_by=user, status=DRAFT_STATUS,
-        ).count(),
+        'completed_count': visible_qs.filter(status=COMPLETED_STATUS).count(),
+        'draft_count': draft_count,
         'my_count': ArtworkRequest.objects.filter(created_by=user).count(),
-        'total_count': ArtworkRequest.objects.count(),
+        'total_count': visible_qs.count(),
         'user_groups': groups,
         'recent_pending': recent_pending,
     }
@@ -389,39 +437,66 @@ def _save_artwork_files(artwork, request):
 @login_required
 @group_required('DESIGN', 'ADMIN')
 def artwork_create(request):
+    from django.db import IntegrityError
+
     logo_templates = _ensure_logo_templates()
+    reserved_artwork_no = None
 
     if request.method == 'POST':
         is_submitting = request.POST.get('action') == 'submit'
         form = ArtworkRequestForm(
             request.POST, request.FILES, is_submitting=is_submitting,
         )
+        reserved_artwork_no = (request.POST.get('artwork_no') or '').strip()
         if form.is_valid():
             artwork = form.save(commit=False)
-            artwork.artwork_no = generate_artwork_number()
             artwork.created_by = request.user
             artwork.current_user = request.user
             artwork.status = DRAFT_STATUS
-            artwork.save()
-            _save_logo_checks_from_post(artwork, request.POST)
-            _save_color_specs_from_post(artwork, request.POST, request.FILES)
-            upload_errors = _save_artwork_files(artwork, request)
-            if upload_errors:
-                messages.warning(request, 'Some files were skipped: ' + '; '.join(upload_errors))
-            action = request.POST.get('action', 'save')
-            if action == 'submit':
-                ArtworkStatusManager.reset_approval_flags(artwork)
-                ArtworkStatusManager.submit_for_approval(
-                    artwork, request.user, ip=get_client_ip(request)
+            saved = False
+            preferred = reserved_artwork_no
+            for attempt in range(8):
+                artwork.artwork_no = allocate_artwork_number(
+                    preferred if attempt == 0 else None,
                 )
-                messages.success(request, f'Artwork {artwork.artwork_no} submitted for approval.')
-                return redirect('artwork-detail', artwork_no=artwork.artwork_no)
-            messages.success(request, f'Draft {artwork.artwork_no} saved. You can continue editing later.')
-            return redirect('artwork-edit', artwork_no=artwork.artwork_no)
+                try:
+                    artwork.save()
+                    saved = True
+                    break
+                except IntegrityError:
+                    preferred = None
+            if not saved:
+                messages.error(
+                    request,
+                    'Could not allocate a unique artwork number. Please try again.',
+                )
+            else:
+                if reserved_artwork_no and artwork.artwork_no != reserved_artwork_no.upper():
+                    messages.info(
+                        request,
+                        f'Artwork number {reserved_artwork_no} was already used. '
+                        f'This record was saved as {artwork.artwork_no}.',
+                    )
+                _save_logo_checks_from_post(artwork, request.POST)
+                _save_color_specs_from_post(artwork, request.POST, request.FILES)
+                upload_errors = _save_artwork_files(artwork, request)
+                if upload_errors:
+                    messages.warning(request, 'Some files were skipped: ' + '; '.join(upload_errors))
+                action = request.POST.get('action', 'save')
+                if action == 'submit':
+                    ArtworkStatusManager.reset_approval_flags(artwork)
+                    ArtworkStatusManager.submit_for_approval(
+                        artwork, request.user, ip=get_client_ip(request)
+                    )
+                    messages.success(request, f'Artwork {artwork.artwork_no} submitted for approval.')
+                    return redirect('artwork-detail', artwork_no=artwork.artwork_no)
+                messages.success(request, f'Draft {artwork.artwork_no} saved. You can continue editing later.')
+                return redirect('artwork-edit', artwork_no=artwork.artwork_no)
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = ArtworkRequestForm()
+        reserved_artwork_no = allocate_artwork_number()
 
     post_data = request.POST if request.method == 'POST' else None
     return render(request, 'artwork/create.html', {
@@ -431,6 +506,7 @@ def artwork_create(request):
         'color_slots_data': _build_color_slots_data(post_data=post_data),
         'is_edit': False,
         'artwork': None,
+        'artwork_no': reserved_artwork_no,
         'attachments': [],
     })
 
@@ -493,6 +569,7 @@ def artwork_edit(request, artwork_no):
         'color_slots_data': _build_color_slots_data(artwork=artwork, post_data=post_data),
         'is_edit': True,
         'artwork': artwork,
+        'artwork_no': artwork.artwork_no,
         'attachments': artwork.attachments.all(),
     })
 
@@ -595,6 +672,11 @@ def artwork_detail(request, artwork_no):
         'attachments': artwork.attachments.all(),
         'has_color_specs': _artwork_has_color_specs(artwork),
         'has_color_section': _artwork_has_color_section(artwork),
+        'can_edit': _can_edit(artwork, request.user),
+        'can_review': _can_review(artwork, request.user),
+        'review_url_name': _review_url_name(artwork) if _can_review(artwork, request.user) else None,
+        'can_download_pdf': _can_download_pdf(artwork, request.user),
+        'can_fill_procurement': _can_fill_procurement(artwork, request.user),
     })
 
 
@@ -634,7 +716,11 @@ def _build_approval_timeline(artwork):
 
 @login_required
 def artwork_all(request):
-    artworks = _artworks_for_user(request.user).select_related('created_by')
+    visible = _artworks_for_user(request.user)
+    statuses = list(
+        visible.order_by('status').values_list('status', flat=True).distinct()
+    )
+    artworks = visible.select_related('created_by')
     search = request.GET.get('q', '')
     if search:
         artworks = artworks.filter(
@@ -646,10 +732,10 @@ def artwork_all(request):
     if status_filter:
         artworks = artworks.filter(status=status_filter)
     return render(request, 'artwork/all.html', {
-        'artworks': artworks,
+        'artworks': _with_action_flags(artworks.order_by('-date_created'), request.user),
         'search': search,
         'status_filter': status_filter,
-        'statuses': ArtworkRequest.objects.values_list('status', flat=True).distinct(),
+        'statuses': statuses,
         'page_title': 'All Artworks',
         'active_tab': 'all',
         'show_pdf': True,
@@ -662,7 +748,7 @@ def artwork_my(request):
         created_by=request.user,
     ).select_related('created_by').order_by('-date_created')
     return render(request, 'artwork/all.html', {
-        'artworks': artworks,
+        'artworks': _with_action_flags(artworks, request.user),
         'page_title': 'My Artworks',
         'active_tab': 'my',
         'show_pdf': True,
@@ -672,15 +758,16 @@ def artwork_my(request):
 @login_required
 def artwork_drafts(request):
     groups = _user_groups(request.user)
-    if request.user.is_superuser or 'ADMIN' in groups:
-        artworks = ArtworkRequest.objects.filter(status=DRAFT_STATUS)
+    # Design work queue: drafts, design-created, and items sent back for revision.
+    if request.user.is_superuser or groups.intersection({'ADMIN', 'DESIGN'}):
+        artworks = ArtworkRequest.objects.filter(status__in=DESIGN_WORK_STATUSES)
     else:
         artworks = ArtworkRequest.objects.filter(
-            created_by=request.user, status=DRAFT_STATUS,
+            created_by=request.user, status__in=DESIGN_WORK_STATUSES,
         )
     artworks = artworks.select_related('created_by').order_by('-date_created')
     return render(request, 'artwork/all.html', {
-        'artworks': artworks,
+        'artworks': _with_action_flags(artworks, request.user),
         'page_title': 'Drafts',
         'active_tab': 'drafts',
         'show_pdf': False,
@@ -690,12 +777,16 @@ def artwork_drafts(request):
 @login_required
 def artwork_pending(request):
     groups = _user_groups(request.user)
+    # Approval queue only — design revision lives under Drafts for DESIGN users.
     statuses = []
     for g in groups:
-        statuses.extend(GROUP_STATUS_MAPPING.get(g, []))
+        for status in GROUP_STATUS_MAPPING.get(g, []):
+            if status.startswith('Pending:') and status != 'Pending: Design Revision':
+                statuses.append(status)
     if request.user.is_superuser or 'ADMIN' in groups:
         statuses = list(
             ArtworkRequest.objects.filter(status__startswith='Pending:')
+            .exclude(status='Pending: Design Revision')
             .values_list('status', flat=True)
             .distinct()
         )
@@ -711,7 +802,7 @@ def artwork_pending(request):
             Q(sku_size__icontains=search)
         )
     return render(request, 'artwork/all.html', {
-        'artworks': artworks,
+        'artworks': _with_action_flags(artworks, request.user),
         'search': search,
         'page_title': 'Pending',
         'active_tab': 'pending',
@@ -734,7 +825,7 @@ def artwork_completed(request):
             Q(sku_size__icontains=search)
         )
     return render(request, 'artwork/all.html', {
-        'artworks': artworks,
+        'artworks': _with_action_flags(artworks, request.user),
         'search': search,
         'page_title': 'Completed',
         'active_tab': 'completed',
@@ -1051,6 +1142,7 @@ def api_artwork_comments(request, artwork_no):
 
 
 @login_required
+@group_required('DESIGN', 'ADMIN')
 @require_GET
 def api_generate_artwork_number(request):
     return JsonResponse({'artwork_no': generate_artwork_number()})

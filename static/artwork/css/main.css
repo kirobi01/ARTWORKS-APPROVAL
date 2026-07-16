@@ -1131,6 +1131,44 @@ body.nav-open { overflow: hidden; }
     justify-content: center;
 }
 
+.artwork-no-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 14px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid #c7d7ea;
+    background: linear-gradient(180deg, #f4f8fc 0%, #eef4fa 100%);
+}
+.artwork-no-banner-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.artwork-no-banner-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+.artwork-no-banner-hint {
+    flex: 1 1 100%;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+@media (min-width: 720px) {
+    .artwork-no-banner-hint {
+        flex: 1 1 auto;
+        text-align: right;
+    }
+}
+
 /* ── Buttons ── */
 .btn {
     display: inline-flex;
