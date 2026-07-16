@@ -49,15 +49,10 @@
         </div>
         {% endif %}
 
-        <details class="form-section">
+        <details class="form-section" open>
             <summary>Product &amp; Packaging Details</summary>
             <div class="form-section-body">
-                <table class="data-table compact-table">
-                    <tr><th>KEBS #</th><td>{{ artwork.kebs_number|default:"—" }}</td><th>Artwork Size</th><td>{{ artwork.artwork_size|default:"—" }}</td></tr>
-                    <tr><th>Barcode</th><td>{{ artwork.barcode|default:"—" }}</td><th>Print Type</th><td>{{ artwork.print_type|default:"—" }}</td></tr>
-                    <tr><th>Packaging Dims</th><td>{{ artwork.dimensions_packaging|default:"—" }}</td><th>Supplier</th><td>{{ artwork.packaging_supplier|default:"—" }}</td></tr>
-                    <tr><th>Lamination</th><td colspan="3">{{ artwork.lamination|default:"—" }}</td></tr>
-                </table>
+                {% include 'artwork/includes/product_details_readonly.html' %}
             </div>
         </details>
 

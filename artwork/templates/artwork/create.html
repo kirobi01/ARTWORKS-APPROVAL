@@ -65,37 +65,66 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if not is_edit %}
     <div class="create-intro">
         <strong>Quick start:</strong> Fill in what you can, use <em>Save as Draft</em> to finish later, or <em>Submit for Approval</em> when ready.
+        Fields marked <span class="field-required">*</span> are required to submit.
     </div>
     {% elif artwork.status == 'Draft' %}
     <div class="create-intro">
         <strong>Draft:</strong> Your changes are not in the approval queue until you submit.
+        Fields marked <span class="field-required">*</span> are required to submit.
     </div>
     {% endif %}
 
     {% if form.errors %}
-    <div class="form-errors-box">
+    <div class="form-errors-box" role="alert">
         <strong>Please fix the following:</strong>
-        <ul>{% for field, errors in form.errors.items %}<li>{{ field }}: {{ errors|join:", " }}</li>{% endfor %}</ul>
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                <li><a href="#{{ field.id_for_label }}">{{ field.label }}</a>: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
     </div>
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
+
+        <datalist id="print-type-suggestions">
+            <option value="Gravure">
+            <option value="Flexographic">
+            <option value="Offset">
+            <option value="Digital">
+            <option value="Screen">
+            <option value="Letterpress">
+        </datalist>
+        <datalist id="unwinding-suggestions">
+            <option value="Position 1">
+            <option value="Position 2">
+            <option value="Position 3">
+            <option value="Position 4">
+            <option value="Position 5">
+            <option value="Position 6">
+            <option value="Position 7">
+            <option value="Position 8">
+            <option value="Left hand unwind">
+            <option value="Right hand unwind">
+        </datalist>
 
         <details class="form-section" open>
             <summary>Essential Information</summary>
             <div class="form-section-body">
-                <div class="form-group">
-                    <label>Reason for Update</label>
-                    {{ form.reason_for_update }}
-                </div>
+                {% include 'artwork/includes/form_field.html' with field=form.reason_for_update %}
                 <div class="form-grid form-grid-3">
-                    {% include 'artwork/includes/lookup_field.html' with label='Product Category' select_field=form.product_category new_field=form.new_product_category add_title='Add new category' back_title='Back to list' %}
-                    <div class="form-group"><label>Product Name</label>{{ form.product_name }}</div>
-                    <div class="form-group"><label>SKU Size</label>{{ form.sku_size }}</div>
-                    <div class="form-group"><label>KEBS Number</label>{{ form.kebs_number }}</div>
-                    <div class="form-group"><label>Artwork Size</label>{{ form.artwork_size }}</div>
-                    <div class="form-group"><label>Barcode</label>{{ form.barcode }}</div>
+                    {% include 'artwork/includes/lookup_field.html' with label='Product Category' select_field=form.product_category new_field=form.new_product_category add_title='Add new category' back_title='Back to list' show_required=True %}
+                    {% include 'artwork/includes/form_field.html' with field=form.product_name show_required=True %}
+                    {% include 'artwork/includes/form_field.html' with field=form.sku_size %}
+                    {% include 'artwork/includes/form_field.html' with field=form.kebs_number %}
+                    {% include 'artwork/includes/form_field.html' with field=form.artwork_size %}
+                    {% include 'artwork/includes/form_field.html' with field=form.barcode %}
                 </div>
             </div>
         </details>
@@ -104,12 +133,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <summary>Packaging &amp; Print Details <span class="section-hint">optional</span></summary>
             <div class="form-section-body">
                 <div class="form-grid form-grid-3">
-                    <div class="form-group"><label>Dimensions Packaging</label>{{ form.dimensions_packaging }}</div>
-                    <div class="form-group"><label>Eye Mark Size</label>{{ form.eye_mark_size }}</div>
-                    <div class="form-group"><label>Print Type</label>{{ form.print_type }}</div>
-                    <div class="form-group"><label>Unwinding Direction</label>{{ form.unwinding_direction }}</div>
+                    {% include 'artwork/includes/form_field.html' with field=form.dimensions_packaging %}
+                    {% include 'artwork/includes/form_field.html' with field=form.eye_mark_size %}
+                    {% include 'artwork/includes/form_field.html' with field=form.print_type %}
+                    {% include 'artwork/includes/form_field.html' with field=form.unwinding_direction %}
                     {% include 'artwork/includes/lookup_field.html' with label='Packaging Supplier' select_field=form.packaging_supplier new_field=form.new_packaging_supplier add_title='Add new supplier' back_title='Back to list' %}
-                    <div class="form-group"><label>Lamination</label>{{ form.lamination }}</div>
+                    {% include 'artwork/includes/form_field.html' with field=form.lamination %}
                 </div>
             </div>
         </details>
@@ -118,10 +147,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <summary>Logo Checks</summary>
             <div class="form-section-body">
                 <div class="form-grid form-grid-4">
-                    <div class="form-group"><label>Logo Size</label>{{ form.logo_size_status }}</div>
-                    <div class="form-group"><label>Brand Text</label>{{ form.brand_text_status }}</div>
-                    <div class="form-group"><label>R Mark</label>{{ form.r_mark_status }}</div>
-                    <div class="form-group"><label>Number of Colors</label>{{ form.number_of_colors }}</div>
+                    {% include 'artwork/includes/form_field.html' with field=form.logo_size_status %}
+                    {% include 'artwork/includes/form_field.html' with field=form.brand_text_status %}
+                    {% include 'artwork/includes/form_field.html' with field=form.r_mark_status %}
+                    {% include 'artwork/includes/form_field.html' with field=form.number_of_colors %}
                 </div>
 
                 <p class="logo-picker-help">
@@ -150,7 +179,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="logo-colors-wrap"{% if item.status != 'Okay' %} hidden{% endif %}>
                             <input type="text" name="logo_colors_{{ tmpl.id }}" class="form-control"
                                    placeholder="Colors used (optional)"
-                                   value="{{ item.colors }}">
+                                   value="{{ item.colors }}"
+                                   autocomplete="off">
                         </div>
                     </div>
                     {% endwith %}
@@ -165,13 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <summary>Artwork Text Checks <span class="section-hint">optional</span></summary>
             <div class="form-section-body">
                 <div class="form-grid form-grid-3">
-                    <div class="form-group"><label>Not Hydrogenated Text</label>{{ form.not_hydrogenated_text }}</div>
-                    <div class="form-group"><label>Net Weight "e"</label>{{ form.net_weight_e }}</div>
-                    <div class="form-group"><label>Pre-Printed Expiry/BB Date</label>{{ form.pre_printed_expiry }}</div>
-                    <div class="form-group"><label>Fortification Text</label>{{ form.fortification_text }}</div>
-                    <div class="form-group"><label>NEMA Requirements</label>{{ form.nema_requirements }}</div>
-                    <div class="form-group"><label>Triple Refined</label>{{ form.triple_refined }}</div>
-                    <div class="form-group"><label>Storage Condition</label>{{ form.storage_condition }}</div>
+                    {% include 'artwork/includes/form_field.html' with field=form.not_hydrogenated_text %}
+                    {% include 'artwork/includes/form_field.html' with field=form.net_weight_e %}
+                    {% include 'artwork/includes/form_field.html' with field=form.pre_printed_expiry %}
+                    {% include 'artwork/includes/form_field.html' with field=form.fortification_text %}
+                    {% include 'artwork/includes/form_field.html' with field=form.nema_requirements %}
+                    {% include 'artwork/includes/form_field.html' with field=form.triple_refined %}
+                    {% include 'artwork/includes/form_field.html' with field=form.storage_condition %}
                 </div>
             </div>
         </details>
@@ -179,34 +209,51 @@ document.addEventListener('DOMContentLoaded', function() {
         <details class="form-section">
             <summary>Ingredients &amp; Color Specifications <span class="section-hint">optional</span></summary>
             <div class="form-section-body">
-                <div class="form-group">
-                    <label>Ingredients (allergens in bold)</label>
-                    {{ form.ingredients }}
+                {% include 'artwork/includes/form_field.html' with field=form.ingredients %}
+                <p class="logo-picker-help">Type CMYK values (e.g. <strong>100 0 0 0</strong>) and the live preview fills automatically. Colors are shown to approvers.</p>
+                <div class="table-wrap">
+                    <table class="data-table compact-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Slot</th>
+                                <th scope="col">Color Name</th>
+                                <th scope="col">CMYK Values</th>
+                                <th scope="col">Color</th>
+                                <th scope="col">Swatch image</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in color_slots_data %}
+                        <tr>
+                            <td>{{ row.slot }}</td>
+                            <td>
+                                <label class="sr-only" for="id_color_name_{{ row.slot }}">Color name {{ row.slot }}</label>
+                                <input type="text" id="id_color_name_{{ row.slot }}" name="color_name_{{ row.slot }}"
+                                       class="form-control" value="{{ row.name }}" placeholder="e.g. Brand Red" autocomplete="off">
+                            </td>
+                            <td>
+                                <label class="sr-only" for="id_color_cmyk_{{ row.slot }}">CMYK {{ row.slot }}</label>
+                                <input type="text" id="id_color_cmyk_{{ row.slot }}" name="color_cmyk_{{ row.slot }}"
+                                       class="form-control cmyk-input" data-slot="{{ row.slot }}"
+                                       placeholder="C M Y K" value="{{ row.cmyk }}" autocomplete="off">
+                            </td>
+                            <td>
+                                <span class="cmyk-swatch" data-slot="{{ row.slot }}" title="Live color from CMYK"></span>
+                                <input type="hidden" name="color_hex_{{ row.slot }}" class="cmyk-hex" data-slot="{{ row.slot }}" value="{{ row.hex }}">
+                            </td>
+                            <td>
+                                <label class="sr-only" for="id_color_swatch_{{ row.slot }}">Swatch {{ row.slot }}</label>
+                                <input type="file" id="id_color_swatch_{{ row.slot }}" name="color_swatch_{{ row.slot }}"
+                                       accept="image/*" class="form-control">
+                                {% if row.swatch %}
+                                <img src="{{ row.swatch.url }}" width="36" height="36" class="swatch-thumb" alt="Saved swatch {{ row.slot }}">
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <p class="logo-picker-help">Type the CMYK values (e.g. <strong>100 0 0 0</strong>) and the live color preview fills automatically. This color is saved and shown to approvers.</p>
-                <table class="data-table compact-table">
-                    <thead><tr><th>Slot</th><th>Color Name</th><th>CMYK Values</th><th>Color</th><th>Swatch image</th></tr></thead>
-                    <tbody>
-                    {% for row in color_slots_data %}
-                    <tr>
-                        <td>{{ row.slot }}</td>
-                        <td><input type="text" name="color_name_{{ row.slot }}" class="form-control" value="{{ row.name }}"></td>
-                        <td><input type="text" name="color_cmyk_{{ row.slot }}" class="form-control cmyk-input" data-slot="{{ row.slot }}"
-                            placeholder="C M Y K" value="{{ row.cmyk }}"></td>
-                        <td>
-                            <span class="cmyk-swatch" data-slot="{{ row.slot }}" title="Live color from CMYK"></span>
-                            <input type="hidden" name="color_hex_{{ row.slot }}" class="cmyk-hex" data-slot="{{ row.slot }}" value="{{ row.hex }}">
-                        </td>
-                        <td>
-                            <input type="file" name="color_swatch_{{ row.slot }}" accept="image/*" class="form-control">
-                            {% if row.swatch %}
-                            <img src="{{ row.swatch.url }}" width="36" height="36" class="swatch-thumb" alt="">
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </details>
 
@@ -214,12 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <summary>Main Artwork Files</summary>
             <div class="form-section-body">
                 {% if is_edit %}
-                <div id="uploadZone" class="upload-zone">
+                <div id="uploadZone" class="upload-zone" tabindex="0" role="button" aria-label="Upload artwork files">
                     <p>Drag &amp; drop more files here or click to browse</p>
                     <p class="text-muted">JPG, PNG, PDF, AI, EPS, TIFF, SVG — up to 50MB each</p>
                 </div>
                 {% else %}
-                <p class="logo-picker-help">Upload the main packaging artwork (image or PDF). First file becomes the primary preview.</p>
+                <p class="logo-picker-help">Upload the main packaging artwork (image or PDF). The first file becomes the primary preview.</p>
                 <div class="form-group">
                     <label for="artwork_files">Select artwork files</label>
                     <input type="file" id="artwork_files" name="artwork_files" class="form-control"
@@ -231,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="file-item">
                         {% if att.file_type == 'artwork_image' %}
                         <img src="{% url 'attachment-preview' artwork.artwork_no att.id %}" width="60" height="60" style="object-fit:cover;cursor:zoom-in;"
+                             alt="{{ att.original_filename }}"
                              onclick="openImagePreview('{% url 'attachment-preview' artwork.artwork_no att.id %}')">
                         {% else %}
                         <span class="badge">PDF</span>

@@ -1,6 +1,7 @@
 import logging
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -8,6 +9,11 @@ from django.utils import timezone
 
 from .config import ARTWORK_STATUS_CONFIG, STAGE_ORDER
 from .models import ArtworkApprovalLog, ArtworkRequest
+from .operations_routing import (
+    assert_user_can_approve_operations,
+    category_has_operations_mapping,
+    get_operations_assignees,
+)
 from .utils import get_user_email
 
 logger = logging.getLogger('artwork')
@@ -57,6 +63,13 @@ class ArtworkStatusManager:
     @classmethod
     def approve(cls, artwork, stage_key, user, comments='', ip=None):
         cfg = ARTWORK_STATUS_CONFIG[stage_key]
+        if stage_key == 'operations_hod':
+            assert_user_can_approve_operations(user, artwork)
+        if artwork.status != cfg.get('db_status'):
+            raise PermissionDenied(
+                'This artwork is not waiting at your approval stage right now. '
+                'It may have already been actioned or moved on.'
+            )
         prefix = cfg['field_prefix']
         status_before = artwork.status
         now = timezone.now()
@@ -96,6 +109,13 @@ class ArtworkStatusManager:
     @classmethod
     def reject(cls, artwork, stage_key, user, comments='', ip=None):
         cfg = ARTWORK_STATUS_CONFIG[stage_key]
+        if stage_key == 'operations_hod':
+            assert_user_can_approve_operations(user, artwork)
+        if artwork.status != cfg.get('db_status'):
+            raise PermissionDenied(
+                'This artwork is not waiting at your approval stage right now. '
+                'It may have already been actioned or moved on.'
+            )
         prefix = cfg['field_prefix']
         status_before = artwork.status
         now = timezone.now()
@@ -171,6 +191,35 @@ class ArtworkNotificationService:
         except Group.DoesNotExist:
             return []
 
+    @classmethod
+    def _get_stage_recipient_emails(cls, artwork, stage_key):
+        """
+        Primary recipients for a pending stage.
+
+        Operations HOD uses category HOD/deputy mapping when configured;
+        otherwise falls back to the whole OPERATIONS_HOD group.
+        """
+        cfg = ARTWORK_STATUS_CONFIG.get(stage_key) or {}
+        group_name = cfg.get('group')
+        if stage_key == 'operations_hod':
+            if category_has_operations_mapping(artwork):
+                emails = []
+                for user in get_operations_assignees(artwork):
+                    email = get_user_email(user)
+                    if email:
+                        emails.append(email)
+                if not emails:
+                    logger.warning(
+                        'Mapped Operations assignees for %s have no usable email; '
+                        'not broadcasting to the full OPERATIONS_HOD group',
+                        artwork.artwork_no,
+                    )
+                return cls._unique_emails(emails)
+            # Unmapped category — legacy group broadcast
+        if group_name:
+            return cls._get_group_emails(group_name)
+        return []
+
     @staticmethod
     def _send_email(subject, template, context, to_emails, cc_emails=None):
         if not to_emails:
@@ -218,7 +267,7 @@ class ArtworkNotificationService:
         cfg = ARTWORK_STATUS_CONFIG['marketing']
         ctx = cls._base_context(artwork, 'marketing')
         ctx['approval_url'] = cls._approval_url(artwork, 'marketing-approval')
-        to_emails = cls._to_with_actor(cls._get_group_emails(cfg['group']), actor)
+        to_emails = cls._to_with_actor(cls._get_stage_recipient_emails(artwork, 'marketing'), actor)
         cc = cls._get_group_emails('ADMIN')
         subject = f'Artwork {artwork.artwork_no} - New Artwork Submission Pending Your Review'
         cls._send_email(subject, 'artwork_emails/submission.html', ctx, to_emails, cc)
@@ -229,7 +278,9 @@ class ArtworkNotificationService:
         ctx = cls._base_context(artwork, approved_stage)
         ctx['next_stage_name'] = next_cfg['display']
         ctx['approval_url'] = cls._approval_url(artwork, next_cfg.get('approval_url_name'))
-        to_emails = cls._to_with_actor(cls._get_group_emails(next_cfg['group']), actor)
+        to_emails = cls._to_with_actor(
+            cls._get_stage_recipient_emails(artwork, next_stage), actor,
+        )
         cc = []
         designer_email = get_user_email(artwork.created_by) if artwork.created_by else None
         if designer_email and designer_email not in to_emails:
@@ -319,6 +370,6 @@ class ArtworkNotificationService:
         ctx = cls._base_context(artwork, stage_key)
         ctx['approval_url'] = cls._approval_url(artwork, cfg.get('approval_url_name'))
         ctx['timeline_hours'] = cfg.get('timeline_hours', 24)
-        to_emails = cls._get_group_emails(cfg['group'])
+        to_emails = cls._get_stage_recipient_emails(artwork, stage_key)
         subject = f'Artwork {artwork.artwork_no} - Reminder: Pending {cfg["display"]} Approval'
         cls._send_email(subject, 'artwork_emails/deadline_reminder.html', ctx, to_emails)

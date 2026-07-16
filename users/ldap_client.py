@@ -230,6 +230,10 @@ def _authenticate_ldap3(login_id, password, server_uri, base_dn, user_domain, ne
         except LDAPException as exc:
             logger.warning('LDAP3 error for %s (%s): %s', identity, auth_mode, exc)
             continue
+        except (ValueError, OSError, ImportError) as exc:
+            # e.g. NTLM MD4 unavailable on some Python builds — try next mode
+            logger.warning('LDAP auth attempt failed for %s (%s): %s', identity, auth_mode, exc)
+            continue
 
     if last_network_error:
         return None, {}

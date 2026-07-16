@@ -43,11 +43,20 @@ class LDAPAuthenticationBackend:
             return None
 
         login_id = normalize_username(username)
-        user_dn, attrs = authenticate_ad_user(login_id, password)
+        try:
+            user_dn, attrs = authenticate_ad_user(login_id, password)
+        except Exception:
+            # Never block ModelBackend fallback on LDAP/crypto/network errors.
+            logger.exception('LDAP authentication failed for %s', login_id)
+            return None
         if not user_dn:
             return None
 
-        return self._get_or_create_user(login_id, user_dn, attrs)
+        try:
+            return self._get_or_create_user(login_id, user_dn, attrs)
+        except Exception:
+            logger.exception('LDAP user provisioning failed for %s', login_id)
+            return None
 
     def _get_or_create_user(self, login_id, ldap_dn, attrs):
         from users.models import Profile
@@ -73,14 +82,24 @@ class LDAPAuthenticationBackend:
             first_name = parts[0]
             last_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
 
+        # Resolve account by SAM / LDAP DN only — never by AD mail alone
+        # (prevents privilege takeover of an existing local/admin account).
         user = User.objects.filter(
-            Q(username__iexact=sam)
-            | Q(profile__ldap_dn=ldap_dn)
-            | Q(email__iexact=email)
-            | Q(profile__email__iexact=email)
-            | Q(email__iexact=login_id)
-            | Q(profile__email__iexact=login_id)
+            Q(username__iexact=sam) | Q(profile__ldap_dn=ldap_dn)
         ).order_by('pk').first()
+
+        # If the user typed an email at login, allow linking that exact email
+        # only when the account is not already bound to a different AD DN.
+        if not user and '@' in login_id:
+            candidate = User.objects.filter(
+                Q(email__iexact=login_id) | Q(profile__email__iexact=login_id)
+            ).select_related('profile').order_by('pk').first()
+            if candidate:
+                existing_dn = ''
+                if hasattr(candidate, 'profile'):
+                    existing_dn = (candidate.profile.ldap_dn or '').strip()
+                if not existing_dn or existing_dn == ldap_dn:
+                    user = candidate
 
         if user:
             # Keep AD sAMAccountName as canonical username; never overwrite with email.

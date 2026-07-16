@@ -104,13 +104,32 @@ async function submitApproval(action) {
 
     const response = await fetch(window.location.href, {
         method: 'POST',
-        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') },
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+            'Accept': 'application/json',
+        },
         body: formData,
     });
-    const data = await response.json();
-    if (data.success) {
+
+    let data = {};
+    try {
+        data = await response.json();
+    } catch (err) {
+        alert(response.status === 403
+            ? 'You don’t have permission to action this artwork.'
+            : 'Something went wrong. Please try again.');
+        return;
+    }
+
+    if (response.ok && data.success) {
         window.location.href = data.redirect || '/artwork/pending/';
-    } else {
-        alert(data.message || 'Action failed.');
+        return;
+    }
+
+    alert(data.message || (response.status === 403
+        ? 'You don’t have permission to action this artwork.'
+        : 'Action failed.'));
+    if (response.status === 403 && data.redirect) {
+        window.location.href = data.redirect;
     }
 }

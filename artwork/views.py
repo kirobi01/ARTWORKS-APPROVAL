@@ -2,6 +2,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import shutil
 import tempfile
 
@@ -23,6 +24,11 @@ from .config import (
     CHUNK_SIZE, MAX_UPLOAD_SIZE, DRAFT_STATUS, COMPLETED_STATUS,
 )
 from .color_utils import cmyk_to_hex
+from .operations_routing import (
+    filter_operations_pending_queryset,
+    assert_user_can_approve_operations,
+    user_can_approve_operations,
+)
 from .decorators import group_required, stage_approval_required
 from .forms import (
     ArtworkRequestForm, LogoCheckFormSet, ColorSpecFormSet,
@@ -70,6 +76,9 @@ def _can_view(artwork, user):
         return True
     for g in groups:
         if artwork.status in GROUP_STATUS_MAPPING.get(g, []):
+            if g == 'OPERATIONS_HOD' and artwork.status == GROUP_STATUS_MAPPING['OPERATIONS_HOD'][0]:
+                if not user_can_approve_operations(user, artwork):
+                    continue
             return True
     if artwork.status == COMPLETED_STATUS and 'PROCUREMENT' in groups:
         return True
@@ -101,7 +110,8 @@ def _artworks_for_user(user, queryset=None):
     for g in groups:
         visible_statuses.extend(GROUP_STATUS_MAPPING.get(g, []))
     if visible_statuses:
-        return queryset.filter(Q(status__in=visible_statuses) | Q(created_by=user))
+        queryset = queryset.filter(Q(status__in=visible_statuses) | Q(created_by=user))
+        return filter_operations_pending_queryset(queryset, user)
     return queryset.filter(created_by=user)
 
 
@@ -233,10 +243,13 @@ def dashboard(request):
             .distinct()
         )
 
-    pending_count = ArtworkRequest.objects.filter(status__in=pending_statuses).count() if pending_statuses else 0
+    pending_count_qs = ArtworkRequest.objects.filter(status__in=pending_statuses) if pending_statuses else ArtworkRequest.objects.none()
+    pending_count_qs = filter_operations_pending_queryset(pending_count_qs, user)
+    pending_count = pending_count_qs.count()
 
-    recent_pending = ArtworkRequest.objects.filter(
-        status__in=pending_statuses
+    recent_pending = filter_operations_pending_queryset(
+        ArtworkRequest.objects.filter(status__in=pending_statuses),
+        user,
     ).order_by('-date_created')[:5] if pending_statuses else []
 
     context = {
@@ -308,9 +321,12 @@ def _build_logo_tiles(logo_templates, artwork=None, post_data=None):
 
 def _save_logo_checks_from_post(artwork, post_data):
     templates = _ensure_logo_templates()
+    allowed_status = {'', 'Okay', 'N/A', 'Check'}
     for tmpl in templates:
-        status = (post_data.get(f'logo_status_{tmpl.id}') or '').strip()
-        colors = (post_data.get(f'logo_colors_{tmpl.id}') or '').strip()
+        status = (post_data.get(f'logo_status_{tmpl.id}') or '').strip()[:10]
+        if status not in allowed_status:
+            status = ''
+        colors = (post_data.get(f'logo_colors_{tmpl.id}') or '').strip()[:200]
         check, _ = ArtworkLogoCheck.objects.get_or_create(
             artwork_request=artwork,
             logo_name=tmpl.name,
@@ -327,11 +343,15 @@ def _save_color_specs_from_post(artwork, post_data, files):
     for spec in artwork.color_specs.all():
         slot = spec.slot_number
         if f'color_name_{slot}' in post_data:
-            spec.color_name = (post_data.get(f'color_name_{slot}') or '').strip()
+            spec.color_name = (post_data.get(f'color_name_{slot}') or '').strip()[:100]
         if f'color_cmyk_{slot}' in post_data:
-            spec.cmyk_values = (post_data.get(f'color_cmyk_{slot}') or '').strip()
+            spec.cmyk_values = (post_data.get(f'color_cmyk_{slot}') or '').strip()[:100]
         hex_value = (post_data.get(f'color_hex_{slot}') or '').strip()
-        spec.color_hex = hex_value or cmyk_to_hex(spec.cmyk_values)
+        if not hex_value:
+            hex_value = cmyk_to_hex(spec.cmyk_values) or ''
+        if hex_value and not re.fullmatch(r'#[0-9A-Fa-f]{6}', hex_value):
+            hex_value = ''
+        spec.color_hex = hex_value[:7]
         swatch = files.get(f'color_swatch_{slot}')
         if swatch:
             spec.color_swatch = swatch
@@ -372,8 +392,10 @@ def artwork_create(request):
     logo_templates = _ensure_logo_templates()
 
     if request.method == 'POST':
-        form = ArtworkRequestForm(request.POST, request.FILES)
-        form.is_submitting = request.POST.get('action') == 'submit'
+        is_submitting = request.POST.get('action') == 'submit'
+        form = ArtworkRequestForm(
+            request.POST, request.FILES, is_submitting=is_submitting,
+        )
         if form.is_valid():
             artwork = form.save(commit=False)
             artwork.artwork_no = generate_artwork_number()
@@ -425,8 +447,10 @@ def artwork_edit(request, artwork_no):
         _populate_color_slots(artwork)
 
     if request.method == 'POST':
-        form = ArtworkRequestForm(request.POST, request.FILES, instance=artwork)
-        form.is_submitting = request.POST.get('action') == 'submit'
+        is_submitting = request.POST.get('action') == 'submit'
+        form = ArtworkRequestForm(
+            request.POST, request.FILES, instance=artwork, is_submitting=is_submitting,
+        )
         if form.is_valid():
             previous_status = artwork.status
             artwork = form.save(commit=False)
@@ -678,6 +702,7 @@ def artwork_pending(request):
     artworks = ArtworkRequest.objects.filter(
         status__in=statuses,
     ).select_related('created_by').order_by('-date_created')
+    artworks = filter_operations_pending_queryset(artworks, request.user)
     search = request.GET.get('q', '')
     if search:
         artworks = artworks.filter(
@@ -725,6 +750,9 @@ def _approval_view(request, artwork_no, stage_key, template_name):
     if artwork.status != cfg['db_status']:
         messages.warning(request, 'This artwork is not at your approval stage.')
         return redirect('artwork-detail', artwork_no=artwork_no)
+
+    if stage_key == 'operations_hod':
+        assert_user_can_approve_operations(request.user, artwork)
 
     prefix = cfg['field_prefix']
     already_acted = getattr(artwork, f'{prefix}_approved') or getattr(artwork, f'{prefix}_rejected')
@@ -832,25 +860,51 @@ def upload_chunk(request, artwork_no):
         return JsonResponse({'error': 'Permission denied'}, status=403)
 
     chunk = request.FILES.get('chunk')
-    chunk_index = int(request.POST.get('chunk_index', 0))
-    total_chunks = int(request.POST.get('total_chunks', 1))
-    upload_id = request.POST.get('upload_id', '')
-    filename = request.POST.get('filename', 'upload')
-    description = request.POST.get('description', '')
+    if not chunk:
+        return JsonResponse({'error': 'No chunk uploaded.'}, status=400)
+
+    try:
+        chunk_index = int(request.POST.get('chunk_index', 0))
+        total_chunks = int(request.POST.get('total_chunks', 1))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid chunk metadata.'}, status=400)
+
+    if chunk_index < 0 or total_chunks < 1 or chunk_index >= total_chunks or total_chunks > 500:
+        return JsonResponse({'error': 'Invalid chunk range.'}, status=400)
+
+    raw_upload_id = (request.POST.get('upload_id') or '').strip()
+    # Allow only safe token characters — blocks path traversal.
+    if not re.fullmatch(r'[A-Za-z0-9_-]{8,64}', raw_upload_id):
+        return JsonResponse({'error': 'Invalid upload id.'}, status=400)
+    upload_id = raw_upload_id
+
+    filename = os.path.basename((request.POST.get('filename') or 'upload').strip()) or 'upload'
+    description = (request.POST.get('description') or '').strip()[:255]
     is_primary = request.POST.get('is_primary', 'false') == 'true'
 
     os.makedirs(CHUNK_TEMP_DIR, exist_ok=True)
     chunk_path = os.path.join(CHUNK_TEMP_DIR, f'{upload_id}_{chunk_index}')
+    # Ensure resolved path stays inside temp dir
+    if os.path.commonpath([CHUNK_TEMP_DIR, os.path.abspath(chunk_path)]) != os.path.abspath(CHUNK_TEMP_DIR):
+        return JsonResponse({'error': 'Invalid upload path.'}, status=400)
 
-    with open(chunk_path, 'wb') as f:
-        for data in chunk.chunks(CHUNK_SIZE):
-            f.write(data)
+    try:
+        with open(chunk_path, 'wb') as f:
+            for data in chunk.chunks(CHUNK_SIZE):
+                f.write(data)
 
-    if chunk_index == total_chunks - 1:
+        if chunk_index != total_chunks - 1:
+            return JsonResponse({'success': True, 'chunk': chunk_index})
+
         final_path = os.path.join(CHUNK_TEMP_DIR, f'{upload_id}_final')
         with open(final_path, 'wb') as outfile:
             for i in range(total_chunks):
                 cp = os.path.join(CHUNK_TEMP_DIR, f'{upload_id}_{i}')
+                if not os.path.isfile(cp):
+                    outfile.close()
+                    if os.path.exists(final_path):
+                        os.remove(final_path)
+                    return JsonResponse({'error': 'Missing chunk. Please retry upload.'}, status=400)
                 with open(cp, 'rb') as infile:
                     shutil.copyfileobj(infile, outfile)
                 os.remove(cp)
@@ -860,8 +914,16 @@ def upload_chunk(request, artwork_no):
             os.remove(final_path)
             return JsonResponse({'error': 'File too large'}, status=400)
 
+        # Re-open as Django file and validate extension/type
         from django.core.files import File
         with open(final_path, 'rb') as f:
+            django_file = File(f, name=filename)
+            django_file.size = file_size
+            file_errors = validate_upload_file(django_file)
+            if file_errors:
+                os.remove(final_path)
+                return JsonResponse({'error': '; '.join(file_errors)}, status=400)
+            f.seek(0)
             attachment = ArtworkAttachment(
                 artwork_request=artwork,
                 original_filename=filename,
@@ -877,10 +939,10 @@ def upload_chunk(request, artwork_no):
             'success': True,
             'attachment_id': attachment.id,
             'filename': attachment.original_filename,
-            'is_primary': attachment.is_primary,
         })
-
-    return JsonResponse({'success': True, 'chunk_received': chunk_index})
+    except OSError:
+        logger.exception('Chunk upload failed for %s', artwork_no)
+        return JsonResponse({'error': 'Upload failed. Please try again.'}, status=500)
 
 
 @login_required

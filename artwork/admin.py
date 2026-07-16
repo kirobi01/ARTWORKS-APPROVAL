@@ -9,12 +9,21 @@ from .models import (
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'display_order', 'is_active', 'created_at']
+    list_display = [
+        'name', 'hod', 'deputy_hod', 'display_order', 'is_active', 'created_at',
+    ]
     list_editable = ['display_order', 'is_active']
-    list_filter = ['is_active']
-    search_fields = ['name']
+    list_filter = ['is_active', 'hod', 'deputy_hod']
+    search_fields = [
+        'name',
+        'hod__username', 'hod__first_name', 'hod__last_name', 'hod__email',
+        'deputy_hod__username', 'deputy_hod__first_name', 'deputy_hod__last_name',
+        'deputy_hod__email',
+    ]
     ordering = ['display_order', 'name']
-    fields = ['name', 'display_order', 'is_active']
+    autocomplete_fields = ['hod', 'deputy_hod']
+    fields = ['name', 'hod', 'deputy_hod', 'display_order', 'is_active']
+    list_select_related = ['hod', 'deputy_hod']
 
 
 @admin.register(PackagingSupplier)

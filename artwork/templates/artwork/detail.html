@@ -36,10 +36,17 @@
     <div class="table-wrap">
         <table class="data-table">
             <tr><th>Created By</th><td>{{ artwork.created_by.get_full_name|default:artwork.created_by.username }}</td><th>Date</th><td>{{ artwork.date_created|date:"d M Y H:i" }}</td></tr>
-            <tr><th>Revision</th><td>{{ artwork.revision_count }}</td><th>Reason</th><td>{{ artwork.reason_for_update }}</td></tr>
+            <tr><th>Revision</th><td>{{ artwork.revision_count }}</td><th>Status</th><td>{{ artwork.status }}</td></tr>
         </table>
     </div>
 </div>
+
+<details class="form-section" open>
+    <summary>Product &amp; Packaging</summary>
+    <div class="form-section-body">
+        {% include 'artwork/includes/product_details_readonly.html' %}
+    </div>
+</details>
 
 {% with selected_logos=artwork.logo_checks.all %}
 {% if selected_logos or artwork.logo_size_status or artwork.brand_text_status %}

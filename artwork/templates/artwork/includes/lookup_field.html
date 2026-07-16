@@ -1,5 +1,7 @@
-<div class="form-group">
-    <label for="{{ select_field.id_for_label }}">{{ label }}</label>
+<div class="form-group{% if select_field.errors or new_field.errors %} has-error{% endif %}">
+    <label for="{{ select_field.id_for_label }}">
+        {{ label }}{% if show_required %}<span class="field-required" title="Required when submitting">*</span>{% endif %}
+    </label>
     <div class="lookup-field">
         <div class="category-input-group lookup-select-wrap">
             {{ select_field }}
@@ -18,4 +20,6 @@
             </button>
         </div>
     </div>
+    {% for error in select_field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+    {% for error in new_field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
 </div>

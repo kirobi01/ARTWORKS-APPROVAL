@@ -1,0 +1,8 @@
+<div class="form-group{% if field.errors %} has-error{% endif %}">
+    <label for="{{ field.id_for_label }}">
+        {{ field.label }}{% if show_required %}<span class="field-required" title="Required when submitting">*</span>{% endif %}
+    </label>
+    {{ field }}
+    {% if field.help_text %}<p class="field-help">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+</div>

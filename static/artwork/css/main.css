@@ -1049,6 +1049,26 @@ body.nav-open { overflow: hidden; }
     font-size: 0.85rem;
     color: var(--text);
 }
+.form-group.has-error .form-control {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px var(--danger-bg);
+}
+.field-required {
+    color: var(--danger);
+    font-weight: 700;
+    margin-left: 2px;
+}
+.field-help {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+.field-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 6px;
+}
 .form-error { color: var(--danger); font-size: 0.8rem; margin-top: 4px; }
 .form-errors-box {
     background: var(--danger-bg);
@@ -1057,6 +1077,58 @@ body.nav-open { overflow: hidden; }
     padding: 16px;
     margin-bottom: 20px;
     color: #721c24;
+}
+.form-errors-box a {
+    color: #721c24;
+    font-weight: 600;
+}
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.access-denied-card {
+    max-width: 640px;
+    margin: 24px auto;
+}
+.access-denied {
+    text-align: center;
+    padding: 28px 20px 12px;
+}
+.access-denied-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9a3412;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+}
+.access-denied-title {
+    margin: 0 0 10px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.access-denied-message {
+    margin: 0 auto 24px;
+    max-width: 36rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+    font-size: 0.95rem;
+}
+.access-denied .btn-group {
+    justify-content: center;
 }
 
 /* ── Buttons ── */

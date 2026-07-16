@@ -5,6 +5,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 
+from config.error_views import permission_denied_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -17,6 +19,8 @@ urlpatterns = [
     # Main application
     path('artwork/', include('artwork.urls')),
 ]
+
+handler403 = permission_denied_view
 
 # Development only — production serves media through authenticated views
 if settings.DEBUG and getattr(settings, 'SERVE_MEDIA_PUBLICLY', False):

@@ -1,0 +1,24 @@
+{% extends 'artwork/base.html' %}
+{% block title %}Access limited{% endblock %}
+{% block page_title %}Access limited{% endblock %}
+{% block page_subtitle %}
+<p class="main-header-subtitle">You don’t have access to this part of the workflow right now.</p>
+{% endblock %}
+{% block content %}
+<div class="card access-denied-card">
+    <div class="access-denied">
+        <div class="access-denied-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/>
+                <path d="M12 8v5M12 16.5h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h2 class="access-denied-title">{{ heading }}</h2>
+        <p class="access-denied-message">{{ message }}</p>
+        <div class="btn-group">
+            <a href="{% url 'artwork-pending' %}" class="btn btn-primary">Go to Pending</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

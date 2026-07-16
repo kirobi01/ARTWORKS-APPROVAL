@@ -1,0 +1,31 @@
+<table class="data-table compact-table">
+    <tr>
+        <th>Product Category</th><td>{{ artwork.product_category|default:"—" }}</td>
+        <th>Product Name</th><td>{{ artwork.product_name|default:"—" }}</td>
+    </tr>
+    <tr>
+        <th>SKU Size</th><td>{{ artwork.sku_size|default:"—" }}</td>
+        <th>KEBS Number</th><td>{{ artwork.kebs_number|default:"—" }}</td>
+    </tr>
+    <tr>
+        <th>Artwork Size</th><td>{{ artwork.artwork_size|default:"—" }}</td>
+        <th>Barcode</th><td>{{ artwork.barcode|default:"—" }}</td>
+    </tr>
+    <tr>
+        <th>Packaging Dimensions</th><td>{{ artwork.dimensions_packaging|default:"—" }}</td>
+        <th>Eye Mark Size</th><td>{{ artwork.eye_mark_size|default:"—" }}</td>
+    </tr>
+    <tr>
+        <th>Print Type</th><td>{{ artwork.print_type|default:"—" }}</td>
+        <th>Unwinding Direction</th><td>{{ artwork.unwinding_direction|default:"—" }}</td>
+    </tr>
+    <tr>
+        <th>Packaging Supplier</th><td>{{ artwork.packaging_supplier|default:"—" }}</td>
+        <th>Lamination</th><td>{{ artwork.lamination|default:"—" }}</td>
+    </tr>
+    {% if artwork.reason_for_update %}
+    <tr>
+        <th>Reason for Update</th><td colspan="3">{{ artwork.reason_for_update }}</td>
+    </tr>
+    {% endif %}
+</table>

@@ -47,11 +47,33 @@ class LogoTemplate(models.Model):
 
 
 class ProductCategory(models.Model):
-    """User-managed product categories for the artwork form dropdown."""
+    """User-managed product categories for the artwork form dropdown.
+
+    Operations HOD / Deputy are mapped here so each department only
+    receives and approves artwork for its own product categories.
+    """
     name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    hod = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='product_categories_as_hod',
+        verbose_name='Operations HOD',
+        help_text='Primary Operations HOD for this product category / department.',
+    )
+    deputy_hod = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='product_categories_as_deputy',
+        verbose_name='Deputy HOD',
+        help_text='Backup Operations approver; receives the same alerts and can approve.',
+    )
 
     class Meta:
         ordering = ['display_order', 'name']
@@ -59,6 +81,24 @@ class ProductCategory(models.Model):
 
     def __str__(self):
         return self.name
+
+    def operations_assignees(self):
+        """Active HOD and deputy for this category (deduplicated)."""
+        users = []
+        for user in (self.hod, self.deputy_hod):
+            if user and user.is_active and user not in users:
+                users.append(user)
+        return users
+
+    @classmethod
+    def get_by_name(cls, name, *, active_only=True):
+        name = (name or '').strip()
+        if not name:
+            return None
+        qs = cls.objects.filter(name__iexact=name).select_related('hod', 'deputy_hod')
+        if active_only:
+            qs = qs.filter(is_active=True)
+        return qs.first()
 
 
 class PackagingSupplier(models.Model):
