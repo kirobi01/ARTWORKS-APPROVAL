@@ -1,7 +1,10 @@
+from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.admin.views.autocomplete import AutocompleteJsonView
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.shortcuts import redirect
 from django.urls import path, reverse
 
@@ -18,6 +21,99 @@ def format_user_choice(user):
     if name:
         return f'{name} ({user.username})'
     return user.username
+
+
+class GroupAdminForm(forms.ModelForm):
+    """Expose group membership on the Group change page for easy add/remove."""
+
+    users = forms.ModelMultipleChoiceField(
+        label='Members',
+        queryset=User.objects.all().order_by('first_name', 'last_name', 'username'),
+        required=False,
+        widget=FilteredSelectMultiple('members', is_stacked=False),
+        help_text='Select people who belong to this group. Search and move them with the arrows.',
+    )
+
+    class Meta:
+        model = Group
+        fields = ('name', 'permissions')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['users'].label_from_instance = format_user_choice
+        if self.instance and self.instance.pk:
+            self.fields['users'].initial = self.instance.user_set.order_by(
+                'first_name', 'last_name', 'username',
+            )
+
+    def save(self, commit=True):
+        group = super().save(commit=commit)
+        if commit:
+            self._save_users(group)
+        else:
+            old_save_m2m = self.save_m2m
+
+            def save_m2m():
+                old_save_m2m()
+                self._save_users(group)
+
+            self.save_m2m = save_m2m
+        return group
+
+    def _save_users(self, group):
+        group.user_set.set(self.cleaned_data.get('users', []))
+
+
+class GroupAdmin(BaseGroupAdmin):
+    form = GroupAdminForm
+    list_display = ['name', 'member_count', 'permission_count']
+    search_fields = ['name', 'user__username', 'user__first_name', 'user__last_name', 'user__email']
+    ordering = ['name']
+    filter_horizontal = ['permissions']
+
+    def get_queryset(self, request):
+        from django.db.models import Count
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                _member_count=Count('user', distinct=True),
+                _permission_count=Count('permissions', distinct=True),
+            )
+        )
+
+    @admin.display(description='Members', ordering='_member_count')
+    def member_count(self, obj):
+        return getattr(obj, '_member_count', obj.user_set.count())
+
+    @admin.display(description='Permissions', ordering='_permission_count')
+    def permission_count(self, obj):
+        return getattr(obj, '_permission_count', obj.permissions.count())
+
+    def _can_edit_membership(self, request):
+        """Membership changes require user-change rights (not group-change alone)."""
+        return request.user.is_superuser or request.user.has_perm('auth.change_user')
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        BaseForm = super().get_form(request, obj, change, **kwargs)
+        can_edit_membership = self._can_edit_membership(request)
+
+        class BoundGroupAdminForm(BaseForm):
+            def __init__(self, *args, **form_kwargs):
+                super().__init__(*args, **form_kwargs)
+                if not can_edit_membership and 'users' in self.fields:
+                    self.fields['users'].disabled = True
+                    self.fields['users'].help_text = (
+                        'You can view members here, but need “Can change user” '
+                        'permission to add or remove people from this group.'
+                    )
+
+            def _save_users(self, group):
+                if not can_edit_membership:
+                    return
+                group.user_set.set(self.cleaned_data.get('users', []))
+
+        return BoundGroupAdminForm
 
 
 class UserAutocompleteJsonView(AutocompleteJsonView):
@@ -120,9 +216,11 @@ class RoleAdmin(admin.ModelAdmin):
     list_display = ['name', 'code', 'level']
 
 
-# Re-register User with profile inline
+# Re-register User with profile inline; Group with membership picker
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+admin.site.unregister(Group)
+admin.site.register(Group, GroupAdmin)
 
 
 def _patch_admin_urls():

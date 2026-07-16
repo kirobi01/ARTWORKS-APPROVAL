@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.contrib.auth.models import Group
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from users.account_utils import deduplicate_users, get_user_for_authentication
 from users.authentication import FlexibleUsernameBackend
@@ -50,3 +52,82 @@ class FlexibleUsernameBackendTests(TestCase):
     def test_get_user_for_authentication_normalizes_username(self):
         user = get_user_for_authentication('TEST.USER')
         self.assertEqual(user.username, 'test.user')
+
+
+class GroupAdminMembershipTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_superuser(
+            'group_admin_ui', 'group_admin_ui@example.com', 'pass',
+        )
+        self.alice = User.objects.create_user(
+            'group_alice', password='pass', first_name='Alice', last_name='A',
+        )
+        self.bob = User.objects.create_user(
+            'group_bob', password='pass', first_name='Bob', last_name='B',
+        )
+        self.group, _ = Group.objects.get_or_create(name='GROUP_ADMIN_TEST')
+        self.group.user_set.clear()
+        self.group.user_set.add(self.alice)
+        self.client = Client()
+        self.client.force_login(self.admin)
+
+    def test_group_list_shows_member_count(self):
+        response = self.client.get(reverse('admin:auth_group_changelist'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'GROUP_ADMIN_TEST')
+        self.assertContains(response, '>1<')
+
+    def test_group_change_shows_current_members(self):
+        response = self.client.get(reverse('admin:auth_group_change', args=[self.group.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Members')
+        self.assertContains(response, 'Alice A (group_alice)')
+
+    def test_add_and_remove_members_from_group_admin(self):
+        url = reverse('admin:auth_group_change', args=[self.group.pk])
+        response = self.client.post(url, {
+            'name': 'GROUP_ADMIN_TEST',
+            'users': [str(self.bob.pk)],
+        })
+        self.assertEqual(
+            response.status_code,
+            302,
+            getattr(response, 'context', None) and response.context.get('adminform'),
+        )
+        members = set(self.group.user_set.values_list('username', flat=True))
+        self.assertEqual(members, {'group_bob'})
+        self.assertFalse(self.group.user_set.filter(pk=self.alice.pk).exists())
+
+    def test_clear_all_members(self):
+        url = reverse('admin:auth_group_change', args=[self.group.pk])
+        response = self.client.post(url, {
+            'name': 'GROUP_ADMIN_TEST',
+            # No users selected clears membership
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.group.user_set.count(), 0)
+
+    def test_change_group_only_cannot_alter_membership(self):
+        """Staff with change_group but not change_user may view, not rewrite members."""
+        from django.contrib.auth.models import Permission
+
+        User = get_user_model()
+        limited = User.objects.create_user('group_only_staff', password='pass', is_staff=True)
+        limited.user_permissions.add(
+            Permission.objects.get(codename='view_group', content_type__app_label='auth'),
+            Permission.objects.get(codename='change_group', content_type__app_label='auth'),
+        )
+        client = Client()
+        client.force_login(limited)
+        url = reverse('admin:auth_group_change', args=[self.group.pk])
+        response = client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Alice A (group_alice)')
+        response = client.post(url, {
+            'name': 'GROUP_ADMIN_TEST',
+            'users': [str(self.bob.pk)],
+        })
+        self.assertEqual(response.status_code, 302)
+        members = set(self.group.user_set.values_list('username', flat=True))
+        self.assertEqual(members, {'group_alice'})
